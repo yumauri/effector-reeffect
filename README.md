@@ -208,7 +208,7 @@ reeffect(1)
 reeffect(2)
 ```
 
-Now, handler promise contain `[cancel]` function, and ReEffect will call it while cancelling operation:
+Now ReEffect know, how to cancel your Promise's logic, and will do it while cancelling operation:
 
 ```
 reeffect called { params: 1, strategy: Symbol(TAKE_LAST) }
