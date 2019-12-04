@@ -1,4 +1,5 @@
 import {
+  getStrategyName,
   STRATEGY,
   TAKE_EVERY,
   TAKE_FIRST,
@@ -6,14 +7,18 @@ import {
   TAKE_QUEUE,
 } from './strategy'
 
-/**
- * CanceledError error class
- */
-export class CancelledError extends Error {
+export class ReEffectError extends Error {
+  constructor(message: string) {
+    super(message)
+
+    // stacktrace is useless here (because of async nature), so remove it
+    delete this.stack
+  }
+}
+
+export class CancelledError extends ReEffectError {
   constructor(strategy?: STRATEGY) {
-    const name = strategy
-      ? String(strategy).replace(/Symbol\((.*)\)/, '$1')
-      : undefined
+    const name = strategy ? getStrategyName(strategy) : undefined
     let msg: string
 
     switch (strategy) {
@@ -36,24 +41,13 @@ export class CancelledError extends Error {
     }
 
     super(msg)
-
-    // remove stacktrace
-    // (show me the case when it is usable)
-    delete this.stack
   }
 }
 
-/**
- * LimitExceededError class
- */
-export class LimitExceededError extends Error {
+export class LimitExceededError extends ReEffectError {
   constructor(limit: number, running: number) {
     super(
       `Cancelled due to limit of "${limit}" exceeded, there are already ${running} running effects`
     )
-
-    // remove stacktrace
-    // (show me the case when it is usable)
-    delete this.stack
   }
 }

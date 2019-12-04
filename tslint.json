@@ -3,5 +3,9 @@
     "tslint-config-standard-plus",
     "tslint-config-security",
     "tslint-config-prettier"
-  ]
+  ],
+  "rules": {
+    "no-any": false,
+    "no-empty": false
+  }
 }

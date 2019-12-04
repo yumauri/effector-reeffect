@@ -1,13 +1,13 @@
-import { ReEffectConfig } from './types'
+import { CreateReEffectConfig } from './types'
 import { isStrategy, STRATEGY, TAKE_EVERY } from './strategy'
 
 /**
- * Normalize config
+ * Normalize `createReExport` config
  */
 export function normalizeConfig<Payload, Done>(
-  name?: string | ReEffectConfig<Payload, Done>,
-  config?: ReEffectConfig<Payload, Done>
-): ReEffectConfig<Payload, Done> {
+  name?: string | CreateReEffectConfig<Payload, Done>,
+  config?: CreateReEffectConfig<Payload, Done>
+): CreateReEffectConfig<Payload, Done> {
   if (config === undefined) {
     config = typeof name === 'object' ? name : {}
   }
@@ -15,12 +15,10 @@ export function normalizeConfig<Payload, Done>(
     config.name = name
   }
 
-  // set noop handler
   if (config.handler === undefined) {
     config.handler = noop
   }
 
-  // set default strategy
   if (config.strategy === undefined) {
     config.strategy = TAKE_EVERY
   }
@@ -29,7 +27,7 @@ export function normalizeConfig<Payload, Done>(
 }
 
 /**
- * Normalize call parameters
+ * Normalize ReEffect call parameters
  */
 export function normalizeParams<Payload>(
   defaultStrategy: STRATEGY,
@@ -49,10 +47,9 @@ export function normalizeParams<Payload>(
 }
 
 /**
- * No-op handler, does nothing
- * And warns about forgotten handler
+ * No-op default handler
  */
 function noop() {
   console.error('no handler used')
-  return Promise.resolve() as Promise<any> // tslint:disable-line no-any
+  return Promise.resolve() as Promise<any>
 }
