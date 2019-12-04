@@ -134,14 +134,20 @@ export const createReEffectFactory = (
     // so ReEffect could be used as usual Promise, like Effector's Effect
     return promise
       .then(result => {
-        done({ params, strategy, result })
+        // trigger `done` event only for latest finished promise
+        if (running.size === 1 && running.has(promise)) {
+          done({ params, strategy, result })
+        }
         running.delete(promise) && count.decrement() // remove resolved promise from running set
         return result
       })
       .catch(error => {
+        // if promise was cancelled - trigger `cancelled` event
         if (error instanceof CancelledError) {
           cancelled({ params, strategy, error })
-        } else {
+        }
+        // trigger `done` event only for latest finished promise
+        else if (running.size === 1 && running.has(promise)) {
           fail({ params, strategy, error })
         }
         running.delete(promise) && count.decrement() // remove resolved promise from running set
