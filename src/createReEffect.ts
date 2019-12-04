@@ -38,8 +38,8 @@ export const createReEffectFactory = (
     error: Fail
   }>(instance.shortName + '/fail')
   const anyway = createEvent<
-    | { params: Payload; strategy: STRATEGY; result: Done }
-    | { params: Payload; strategy: STRATEGY; error: Fail }
+    | { params: Payload; strategy: STRATEGY; result: Done; status: 'done' }
+    | { params: Payload; strategy: STRATEGY; error: Fail; status: 'fail' }
   >(instance.shortName + '/finally')
   const cancelled = createEvent<{
     params: Payload
@@ -51,7 +51,11 @@ export const createReEffectFactory = (
   // make `finally` event work
   forward({
     from: merge([done, fail]),
-    to: anyway,
+    // tslint:disable-next-line: no-any
+    to: anyway.prepend((payload: any) => ({
+      ...payload,
+      status: 'result' in payload ? 'done' : 'fail',
+    })),
   })
 
   //////////////////////
