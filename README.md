@@ -12,6 +12,26 @@ Like regular Effects, but better :)
 - Handles promises cancellation
 - Can handle _logic_ cancellation
 
+## Table of Contents
+
+<!-- npx markdown-toc README.md -->
+
+- [Install](#install)
+- [Usage](#usage)
+- [Strategies](#strategies)
+  - [TAKE_EVERY](#take_every)
+  - [TAKE_FIRST](#take_first)
+  - [TAKE_LAST](#take_last)
+- [Properties](#properties)
+- [Options](#options)
+- [Cancellation](#cancellation)
+  - [axios](#axios)
+  - [fetch](#fetch)
+  - [ky](#ky)
+  - [request](#request)
+  - [XMLHttpRequest](#xmlhttprequest)
+- [Sponsored](#sponsored)
+
 ## Install
 
 ```bash
@@ -66,19 +86,19 @@ You see the new `TAKE_LAST` argument - this is called _strategy_, and _TAKE_LAST
 
 This is _default strategy_, if you will not specify any other.
 
-<img width="475" alt="TAKE_EVERY" src="https://user-images.githubusercontent.com/6583994/70133654-99893400-1697-11ea-96f0-913cf1b1a12e.png">
+<img width="475" alt="TAKE_EVERY" src="https://github.com/yumauri/effector-reeffect/blob/master/images/TAKE_EVERY.png?raw=true">
 
 Second effect call will launch second asynchronous operation. In contrast with usual Effect, ReEffect will trigger `.done` (or `.fail`) event only for latest operation, and `.pending` store will contain `true` for a whole time of all operations (in other words, if there is at least single pending operation - `.pending` will hold `true`).
 
 ### TAKE_FIRST
 
-<img width="355" alt="TAKE_FIRST" src="https://user-images.githubusercontent.com/6583994/70133741-c3425b00-1697-11ea-9abb-94253adf0d04.png">
+<img width="355" alt="TAKE_FIRST" src="https://github.com/yumauri/effector-reeffect/blob/master/images/TAKE_FIRST.png?raw=true">
 
 Second effect call will be immediately rejected with `CancelledError` (handler will not be executed at all).
 
 ### TAKE_LAST
 
-<img width="475" alt="TAKE_LAST" src="https://user-images.githubusercontent.com/6583994/70133766-cfc6b380-1697-11ea-958e-d6c46398883f.png">
+<img width="475" alt="TAKE_LAST" src="https://github.com/yumauri/effector-reeffect/blob/master/images/TAKE_LAST.png?raw=true">
 
 Second effect call will reject all currently pending operations (if any) with `CancelledError`.
 
