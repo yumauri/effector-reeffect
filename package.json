@@ -17,8 +17,19 @@
     "lint": "tslint -p tsconfig.json && yarn spell",
     "spell": "yaspeller .",
     "release": "pika publish",
-    "version": "yarn build"
+    "version": "yarn build",
+    "size": "size-limit"
   },
+  "size-limit": [
+    {
+      "path": "pkg/dist-web/index.js",
+      "limit": "1215 B"
+    },
+    {
+      "path": "pkg/dist-node/index.js",
+      "limit": "1414 B"
+    }
+  ],
   "@pika/pack": {
     "pipeline": [
       [
@@ -57,6 +68,7 @@
     "@pika/plugin-build-node": "^0.8.1",
     "@pika/plugin-build-web": "^0.8.1",
     "@pika/plugin-ts-standard-pkg": "^0.8.1",
+    "@size-limit/preset-small-lib": "^2.2.2",
     "@types/jest": "^24.0.23",
     "effector": "^20.7.1",
     "jest": "^24.9.0",
