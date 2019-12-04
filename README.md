@@ -5,7 +5,7 @@
 [![NPM](https://img.shields.io/npm/v/effector-reeffect.svg)](https://www.npmjs.com/package/effector-reeffect)
 ![Made with Love](https://img.shields.io/badge/made%20with-❤-red.svg)
 
-ReEffects for [Effector](https://github.com/zerobias/effector) ☄️.<br>
+ReEffects for [Effector](https://github.com/zerobias/effector) ☄️<br>
 Like regular Effects, but better :)
 
 - Supports different launch strategies: TAKE_FIRST, TAKE_LAST, TAKE_EVERY

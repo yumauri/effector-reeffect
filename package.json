@@ -12,7 +12,7 @@
   "scripts": {
     "dev": "ts-node src/index.ts",
     "test": "jest --config jestconfig.json",
-    "build": "pika build",
+    "build": "rm -rf pkg/ && pika build",
     "format": "prettier --write \"src/**/*.ts\"",
     "lint": "tslint -p tsconfig.json && yarn spell",
     "spell": "yaspeller .",
@@ -25,10 +25,10 @@
         "@pika/plugin-ts-standard-pkg"
       ],
       [
-        "@pika/plugin-build-node",
-        {
-          "minNodeVersion": "10"
-        }
+        "@pika/plugin-build-node"
+      ],
+      [
+        "@pika/plugin-build-web"
       ],
       [
         "pika-plugin-package.json",
@@ -55,6 +55,7 @@
   "devDependencies": {
     "@pika/pack": "^0.5.0",
     "@pika/plugin-build-node": "^0.8.1",
+    "@pika/plugin-build-web": "^0.8.1",
     "@pika/plugin-ts-standard-pkg": "^0.8.1",
     "@types/jest": "^24.0.23",
     "effector": "^20.7.1",

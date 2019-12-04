@@ -904,6 +904,15 @@
     rollup "^1.1.0"
     rollup-plugin-babel "^4.3.0"
 
+"@pika/plugin-build-web@^0.8.1":
+  version "0.8.1"
+  resolved "https://registry.yarnpkg.com/@pika/plugin-build-web/-/plugin-build-web-0.8.1.tgz#ba519fcd29eed20c1d1091d4083d0be21aa6a5f3"
+  integrity sha512-mRs3kquDb2DS8y7URvMefsZUlz+uhO0n4ykutGmZ+6EslvW1ZjGefOiaQ0qiDDFHF4ir4jg4od7Vo3TU32DGcg==
+  dependencies:
+    "@pika/types" "^0.8.1"
+    "@types/node" "^10.12.18"
+    rollup "^1.1.0"
+
 "@pika/plugin-ts-standard-pkg@^0.8.1":
   version "0.8.1"
   resolved "https://registry.yarnpkg.com/@pika/plugin-ts-standard-pkg/-/plugin-ts-standard-pkg-0.8.1.tgz#a7bfc303a89e1c31512afe5fdaf1707a14303173"
@@ -1040,6 +1049,11 @@
   version "12.12.14"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-12.12.14.tgz#1c1d6e3c75dba466e0326948d56e8bd72a1903d2"
   integrity sha512-u/SJDyXwuihpwjXy7hOOghagLEV1KdAST6syfnOk6QZAMzZuWZqXy5aYYZbh8Jdpd4escVFP0MvftHNDb9pruA==
+
+"@types/node@^10.12.18":
+  version "10.17.6"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-10.17.6.tgz#1aaabd6f6470a6ac3824ab1e94d731ca1326d93d"
+  integrity sha512-0a2X6cgN3RdPBL2MIlR6Lt0KlM7fOFsutuXcdglcOq6WvLnYXgPQSh0Mx6tO1KCAE8MxbHSOSTWDoUxRq+l3DA==
 
 "@types/normalize-package-data@^2.4.0":
   version "2.4.0"
