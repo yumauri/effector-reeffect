@@ -1,0 +1,18 @@
+{
+  "excludeFiles": [".git", ".vscode", "node_modules", "lib"],
+  "lang": "en",
+  "fileExtensions": [".md"],
+  "dictionary": [
+    "[Rr]e[Ee]ffects?",
+    "[Aa]xios",
+    "[Kk]y",
+    "payload",
+    "AbortController",
+    "XMLHttpRequest"
+  ],
+  "ignoreText": [],
+  "ignoreUrls": true,
+  "ignoreUppercase": true,
+  "findRepeatWords": false,
+  "maxRequests": 5
+}

@@ -1,0 +1,10 @@
+/node_modules/
+/coverage/
+/lib/
+/pkg/
+/test/
+yarn-error.log
+.DS_Store
+.project
+.vscode
+*.log

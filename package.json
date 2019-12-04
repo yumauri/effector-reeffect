@@ -1,0 +1,79 @@
+{
+  "name": "effector-reeffect",
+  "version": "0.0.0",
+  "description": "Concurrent effects for Effector",
+  "author": "Victor Didenko <yumaa.verdin@gmail.com> (https://yumaa.name)",
+  "license": "MIT",
+  "keywords": [
+    "effector",
+    "effects",
+    "side effects"
+  ],
+  "scripts": {
+    "dev": "ts-node src/index.ts",
+    "test": "jest --config jestconfig.json",
+    "build": "pika build",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "tslint -p tsconfig.json && yarn spell",
+    "spell": "yaspeller .",
+    "release": "pika publish",
+    "version": "yarn build"
+  },
+  "@pika/pack": {
+    "pipeline": [
+      [
+        "@pika/plugin-ts-standard-pkg"
+      ],
+      [
+        "@pika/plugin-build-node",
+        {
+          "minNodeVersion": "10"
+        }
+      ],
+      [
+        "pika-plugin-package.json",
+        {
+          "+author": "^",
+          "*files": [
+            "-bin/"
+          ],
+          "-dependencies": {},
+          "-devDependencies": {}
+        }
+      ]
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yumauri/effector-reeffect"
+  },
+  "bugs": {
+    "url": "https://github.com/yumauri/effector-reeffect/issues"
+  },
+  "homepage": "https://github.com/yumauri/effector-reeffect#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "@pika/pack": "^0.5.0",
+    "@pika/plugin-build-node": "^0.8.1",
+    "@pika/plugin-ts-standard-pkg": "^0.8.1",
+    "@types/jest": "^24.0.23",
+    "effector": "^20.7.1",
+    "jest": "^24.9.0",
+    "pika-plugin-package.json": "^1.0.1",
+    "prettier": "^1.19.1",
+    "ts-jest": "^24.2.0",
+    "ts-node": "^8.5.4",
+    "tslint": "^5.20.1",
+    "tslint-config-prettier": "^1.18.0",
+    "tslint-config-security": "^1.16.0",
+    "tslint-config-standard-plus": "^2.3.0",
+    "typescript": "^3.7.3",
+    "yaspeller": "^6.0.2"
+  },
+  "peerDependencies": {
+    "effector": "^20.7.1"
+  },
+  "engines": {
+    "node": ">=10.17.0"
+  }
+}
