@@ -119,10 +119,19 @@ export const createReEffectFactory = (
     // increment currently running effects right before we run effect
     count.increment()
 
-    // wrap handler call in CancellablePromise
+    // wrap handler Promise in CancellablePromise
     let promise: CancellablePromise<Done>
+    let cancelHandlerCallback: undefined | (() => void)
+    const onCancel = (callback: () => void) => {
+      cancelHandlerCallback = callback
+    }
+
     try {
-      promise = wrap(handler(params))
+      const handlerPromise = Promise.resolve(handler(params, onCancel))
+      if (cancelHandlerCallback !== undefined) {
+        handlerPromise[cancel] = cancelHandlerCallback
+      }
+      promise = wrap(handlerPromise)
     } catch (error) {
       promise = wrap(Promise.reject(error))
     }

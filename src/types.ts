@@ -11,11 +11,16 @@ export interface ReEffect<Payload, Done, Fail = Error>
   // properies absent in Effector's Effect
   readonly cancelled: Event<{ params: Payload; error: CancelledError }>
   readonly cancel: Event<void>
+  readonly use: {
+    (handler: HandlerFn<Payload, Done>): ReEffect<Payload, Done, Fail>
+    getCurrent(): (params: Payload) => Promise<Done> // FIXME: should be HandlerFn<Payload, Done>
+  }
 }
 
 // ReEffect config interface
 export type HandlerFn<Payload, Done> = (
-  payload: Payload
+  payload: Payload,
+  onCancel: (callback: () => void) => void
 ) => Promise<Done> | Done
 
 // ReEffect config

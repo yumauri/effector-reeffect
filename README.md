@@ -117,7 +117,7 @@ ReEffect will handle Promises cancellation for you (so handler promise result wi
 
 But bright side of it is that you can tell ReEffect, _how to cancel your logic_ ☀️
 
-To do this, `handler` Promise should contain `[cancel]` property with function, which will cancel this promise's logic. Note, that `cancel` is also a _Symbol_, so, import it from the package.
+To do this, `handler` accepts `onCancel` callback as a second argument, and you can specify, what actually to do on cancel.
 
 Let me show an example:
 
@@ -164,7 +164,7 @@ As you can see, first effect call was rejected and cancelled, but timeout itself
 Let's change code above:
 
 ```javascript
-import { createReEffect, TAKE_LAST, cancel } from 'effector-reeffect'
+import { createReEffect, TAKE_LAST } from 'effector-reeffect'
 
 const reeffect = createReEffect({ strategy: TAKE_LAST })
 
@@ -173,16 +173,15 @@ reeffect.done.watch(_ => console.log('reeffect done', _))
 reeffect.fail.watch(_ => console.log('reeffect fail', _))
 reeffect.cancelled.watch(_ => console.log('reeffect cancelled', _))
 
-reeffect.use(params => {
+reeffect.use((params, onCancel) => {
   let timeout
-  const promise = new Promise(resolve => {
+  onCancel(() => clearTimeout(timeout))
+  return new Promise(resolve => {
     timeout = setTimeout(() => {
       console.log(`-> AHA! TIMEOUT FROM EFFECT WITH PARAMS: ${params}`)
       resolve('done')
     }, 1000)
   })
-  promise[cancel] = () => clearTimeout(timeout)
-  return promise
 })
 
 reeffect(1)
@@ -209,13 +208,12 @@ This could be done with any asynchronous operation, which supports cancellation 
 Axios supports cancellation via [_cancel token_](https://github.com/axios/axios#cancellation):
 
 ```javascript
-reeffect.use(({ id }) => {
+reeffect.use(({ id }, onCancel) => {
   const source = CancelToken.source()
-  const promise = axios.get(`https://example.com/users/${id}`, {
+  onCancel(() => source.cancel())
+  return axios.get(`https://example.com/users/${id}`, {
     cancelToken: source.token,
   })
-  promise[cancel] = () => source.cancel()
-  return promise
 })
 ```
 
@@ -224,13 +222,12 @@ reeffect.use(({ id }) => {
 Fetch API supports cancellation via [_AbortController_](https://developer.mozilla.org/en-US/docs/Web/API/AbortController) ([read more](https://developers.google.com/web/updates/2017/09/abortable-fetch)):
 
 ```javascript
-reeffect.use(({ id }) => {
+reeffect.use(({ id }, onCancel) => {
   const controller = new AbortController()
-  const promise = fetch(`https://example.com/users/${id}`, {
+  onCancel(() => controller.abort())
+  return fetch(`https://example.com/users/${id}`, {
     signal: controller.signal,
   })
-  promise[cancel] = () => controller.abort()
-  return promise
 })
 ```
 
@@ -239,13 +236,12 @@ reeffect.use(({ id }) => {
 Ky is built on top of Fetch API, and supports cancellation via [_AbortController_](https://developer.mozilla.org/en-US/docs/Web/API/AbortController) as well:
 
 ```javascript
-reeffect.use(({ id }) => {
+reeffect.use(({ id }, onCancel) => {
   const controller = new AbortController()
-  const promise = ky(`https://example.com/users/${id}`, {
+  onCancel(() => controller.abort())
+  return ky(`https://example.com/users/${id}`, {
     signal: controller.signal,
   }).json()
-  promise[cancel] = () => controller.abort()
-  return promise
 })
 ```
 
@@ -254,15 +250,14 @@ reeffect.use(({ id }) => {
 Request HTTP client supports [`.abort()` method](https://github.com/request/request/issues/772):
 
 ```javascript
-reeffect.use(({ id }) => {
+reeffect.use(({ id }, onCancel) => {
   let r
-  const promise = new Promise((resolve, reject) => {
+  onCancel(() => r.abort())
+  return new Promise((resolve, reject) => {
     r = request(`https://example.com/users/${id}`, (err, resp, body) =>
       err ? reject(err) : resolve(body)
     )
   })
-  promise[cancel] = () => r.abort()
-  return promise
 })
 ```
 
@@ -271,9 +266,10 @@ reeffect.use(({ id }) => {
 If you happen to use good old `XMLHttpRequest`, I will not blame you (but others definitely will). Good to know it supports cancellation too, via [`.abort()` method](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort):
 
 ```javascript
-reeffect.use(({ id }) => {
+reeffect.use(({ id }, onCancel) => {
   let xhr
-  const promise = new Promise(function(resolve, reject) {
+  onCancel(() => xhr.abort())
+  return new Promise(function(resolve, reject) {
     xhr = new XMLHttpRequest()
     xhr.open('GET', `https://example.com/users/${id}`)
     xhr.onload = function() {
@@ -294,8 +290,6 @@ reeffect.use(({ id }) => {
     }
     xhr.send()
   })
-  promise[cancel] = () => xhr.abort()
-  return promise
 })
 ```
 

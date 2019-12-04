@@ -13,7 +13,7 @@ export type CancellablePromise<T> = Promise<T> & {
  * Wrap Promise with `cancel` method
  */
 export function wrap<Done>(
-  promise: CancellablePromise<Done> | PromiseLike<Done> | Promise<Done> | Done
+  promise: CancellablePromise<Done> | PromiseLike<Done> | Promise<Done>
 ): CancellablePromise<Done> {
   // create Promise we can cancel later
   let _cancel: (strategy?: STRATEGY) => void = noop
@@ -31,13 +31,9 @@ export function wrap<Done>(
 
   // return race of two Promises, with exposed `.cancel()` method
   // to cancel our `cancelable` promise, created above, to finish race
-  return Object.assign(
-    Promise.race([
-      promise as Promise<Done>, // `Promise.race` can accept non-promise values, so, show TS his place here
-      cancelable,
-    ]),
-    { [cancel]: _cancel }
-  )
+  return Object.assign(Promise.race([promise, cancelable]), {
+    [cancel]: _cancel,
+  })
 }
 
 /**
