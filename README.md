@@ -1,7 +1,7 @@
 # effector-reeffect
 
 [![Build Status](https://github.com/yumauri/effector-reeffect/workflows/build/badge.svg)](https://github.com/yumauri/effector-reeffect/actions?workflow=build)
-[![Coverage Status](https://coveralls.io/repos/github/yumauri/effector-reeffect/badge.svg?branch=master)](https://coveralls.io/github/yumauri/effector-reeffect?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/yumauri/effector-reeffect/badge.svg)](https://coveralls.io/github/yumauri/effector-reeffect)
 [![License](https://img.shields.io/github/license/yumauri/effector-reeffect.svg?color=yellow)](./LICENSE)
 [![NPM](https://img.shields.io/npm/v/effector-reeffect.svg)](https://www.npmjs.com/package/effector-reeffect)
 ![Made with Love](https://img.shields.io/badge/made%20with-❤-red.svg)
