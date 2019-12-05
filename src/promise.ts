@@ -3,8 +3,9 @@ import { STRATEGY } from './strategy'
 
 export const cancel = Symbol('cancel')
 
+type cancelHandler = (strategy?: STRATEGY) => void
 export type CancellablePromise<T> = Promise<T> & {
-  [cancel]: (strategy?: STRATEGY) => void
+  [cancel]: cancelHandler
 }
 
 /**
@@ -13,7 +14,7 @@ export type CancellablePromise<T> = Promise<T> & {
 export function wrap<Done>(
   promise: CancellablePromise<Done> | PromiseLike<Done> | Promise<Done>
 ): CancellablePromise<Done> {
-  let cancelPromise: (strategy?: STRATEGY) => void = noop
+  let cancelPromise: cancelHandler | undefined
   const cancelable = new Promise<never>((_, reject) => {
     cancelPromise = function(strategy) {
       reject(new CancelledError(strategy))
@@ -26,11 +27,6 @@ export function wrap<Done>(
   // return race of two Promises, with exposed `[cancel]()` method
   // to cancel our `cancelable` promise, created above, to finish race
   return Object.assign(Promise.race([promise, cancelable]), {
-    [cancel]: cancelPromise,
+    [cancel]: cancelPromise!,
   })
 }
-
-/**
- * No-op default cancel promise callback, does nothing
- */
-function noop() {}

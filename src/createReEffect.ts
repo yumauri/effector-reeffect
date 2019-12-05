@@ -80,7 +80,7 @@ export const createReEffectFactory = (
   const $count = effectorCreateStore<number>(0)
   const count = createApi($count, {
     increment: count => count + 1,
-    decrement: count => (count > 0 ? count - 1 : count),
+    decrement: count => count - 1,
   })
 
   /////////////////////

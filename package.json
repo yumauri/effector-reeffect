@@ -23,11 +23,11 @@
   "size-limit": [
     {
       "path": "pkg/dist-web/index.js",
-      "limit": "1215 B"
+      "limit": "1205 B"
     },
     {
       "path": "pkg/dist-node/index.js",
-      "limit": "1414 B"
+      "limit": "1405 B"
     }
   ],
   "@pika/pack": {
