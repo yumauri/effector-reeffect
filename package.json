@@ -23,11 +23,11 @@
   "size-limit": [
     {
       "path": "pkg/dist-web/index.js",
-      "limit": "1205 B"
+      "limit": "1261 B"
     },
     {
       "path": "pkg/dist-node/index.js",
-      "limit": "1405 B"
+      "limit": "1452 B"
     }
   ],
   "@pika/pack": {
@@ -70,7 +70,7 @@
     "@pika/plugin-ts-standard-pkg": "^0.8.1",
     "@size-limit/preset-small-lib": "^2.2.2",
     "@types/jest": "^24.0.23",
-    "effector": "^20.7.1",
+    "effector": "^20.8.1",
     "jest": "^24.9.0",
     "pika-plugin-package.json": "^1.0.1",
     "prettier": "^1.19.1",
@@ -84,7 +84,7 @@
     "yaspeller": "^6.0.2"
   },
   "peerDependencies": {
-    "effector": "^20.7.1"
+    "effector": "^20.8.1"
   },
   "engines": {
     "node": ">=10.17.0"

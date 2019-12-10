@@ -1,4 +1,4 @@
-import { createDomain, is } from 'effector'
+import { createDomain, createEvent, forward, is } from 'effector'
 import { createReEffectFactory } from './createReEffect'
 import { TAKE_EVERY, TAKE_FIRST, TAKE_LAST } from './strategy'
 import { CancelledError, LimitExceededError } from './error'
@@ -461,4 +461,92 @@ test('synchronious exception in handler should reject operation', () => {
   })
 
   return reeffect().catch(error => expect(error).toBe('error'))
+})
+
+test('createReEffect with Effector API, success', async () => {
+  expect.assertions(3)
+  const fn = jest.fn()
+
+  const createReEffect = createReEffectFactory()
+  const reeffect = createReEffect<void, string>({
+    async handler() {
+      return new Promise<string>(resolve => setImmediate(() => resolve('test')))
+    },
+  })
+
+  reeffect.done.watch(fn)
+  reeffect.fail.watch(fn)
+  reeffect.cancelled.watch(fn)
+  reeffect.finally.watch(fn)
+
+  const event = createEvent()
+  forward({
+    from: event,
+    to: reeffect,
+  })
+  event()
+
+  await new Promise(resolve => setTimeout(resolve, 1))
+
+  expect(fn).toHaveBeenCalledTimes(2)
+
+  // done event
+  expect(fn.mock.calls[0][0]).toEqual({
+    params: undefined,
+    strategy: TAKE_EVERY,
+    result: 'test',
+  })
+
+  // finally event
+  expect(fn.mock.calls[1][0]).toEqual({
+    params: undefined,
+    strategy: TAKE_EVERY,
+    result: 'test',
+    status: 'done',
+  })
+})
+
+test('createReEffect with Effector API, failure', async () => {
+  expect.assertions(3)
+  const fn = jest.fn()
+
+  const createReEffect = createReEffectFactory()
+  const reeffect = createReEffect<void, string>({
+    async handler() {
+      return new Promise<string>((_, reject) =>
+        setImmediate(() => reject('test'))
+      )
+    },
+  })
+
+  reeffect.done.watch(fn)
+  reeffect.fail.watch(fn)
+  reeffect.cancelled.watch(fn)
+  reeffect.finally.watch(fn)
+
+  const event = createEvent()
+  forward({
+    from: event,
+    to: reeffect,
+  })
+  event()
+
+  await new Promise(resolve => setTimeout(resolve, 1))
+
+  expect(fn).toHaveBeenCalledTimes(2)
+
+  // done event
+  expect(fn.mock.calls[0][0]).toEqual({
+    params: undefined,
+    strategy: TAKE_EVERY,
+    error: 'test',
+  })
+
+  // finally event
+  expect(fn.mock.calls[1][0]).toEqual({
+    params: undefined,
+    strategy: TAKE_EVERY,
+    error: 'test',
+    status: 'fail',
+  })
 })

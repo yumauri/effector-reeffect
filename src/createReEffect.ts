@@ -4,6 +4,7 @@ import {
   createStore as effectorCreateStore,
   forward,
   merge,
+  step,
 } from 'effector'
 import { CreateReEffectConfig, HandlerFn, ReEffect } from './types'
 import { STRATEGY, TAKE_FIRST, TAKE_LAST } from './strategy'
@@ -171,6 +172,17 @@ export const createReEffectFactory = (
       promise[cancel]()
     }
   })
+
+  // call `reeffect` if node was triggered by graph event, not directly
+  ;(instance as any).graphite.seq.push(
+    (step as any).filter({
+      fn(params, _scope, stack) {
+        if (!stack.parent) return true
+        reeffect(params).catch(() => {})
+        return false
+      },
+    })
+  )
 
   // prepare return object, mimic Effector's Effect
   Object.assign(reeffect, instance)
