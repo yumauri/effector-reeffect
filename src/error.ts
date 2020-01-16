@@ -1,11 +1,4 @@
-import {
-  getStrategyName,
-  STRATEGY,
-  TAKE_EVERY,
-  TAKE_FIRST,
-  TAKE_LAST,
-  TAKE_QUEUE,
-} from './strategy'
+import { RACE, Strategy, TAKE_FIRST, TAKE_LAST } from './strategy'
 
 export class ReEffectError extends Error {
   constructor(message: string) {
@@ -17,37 +10,25 @@ export class ReEffectError extends Error {
 }
 
 export class CancelledError extends ReEffectError {
-  constructor(strategy?: STRATEGY) {
-    const name = strategy ? getStrategyName(strategy) : undefined
-    let msg: string
-
-    switch (strategy) {
-      case TAKE_FIRST:
-        msg = `Cancelled due to "${name}" strategy, there are already running effects`
-        break
-
-      case TAKE_LAST:
-        msg = `Cancelled due to "${name}" strategy, new effect was added`
-        break
-
-      case TAKE_EVERY:
-      case TAKE_QUEUE:
-        msg = `Hm?.. Cancelled due to "${name}", but should not happen...`
-        break
-
-      default:
-        msg = `Cancelled with "cancel" method, cancel all already running effects`
-        break
-    }
-
-    super(msg)
+  constructor(strategy: Strategy | 'cancel' = 'cancel') {
+    // prettier-ignore
+    super(
+      'Cancelled due to "' + strategy + '"' + ({
+        [TAKE_FIRST]: `, there are already running effects`,
+        [TAKE_LAST]: `, new effect was added`,
+        [RACE]: `, other effect won race`,
+        cancel: `, cancel all already running effects`,
+      }[strategy] || `, but should not happen...`)
+    )
   }
 }
 
 export class LimitExceededError extends ReEffectError {
   constructor(limit: number, running: number) {
+    // prettier-ignore
     super(
-      `Cancelled due to limit of "${limit}" exceeded, there are already ${running} running effects`
+      'Cancelled due to limit of "' + limit + '" exceeded,' +
+      'there are already ' + running + ' running effects'
     )
   }
 }

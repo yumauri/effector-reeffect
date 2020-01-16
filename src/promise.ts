@@ -1,32 +1,43 @@
 import { CancelledError } from './error'
-import { STRATEGY } from './strategy'
+import { Strategy } from './strategy'
+import { assign } from './tools'
 
-export const cancel = Symbol('cancel')
-
-type cancelHandler = (strategy?: STRATEGY) => void
 export type CancellablePromise<T> = Promise<T> & {
-  [cancel]: cancelHandler
+  cancel: (strategy?: Strategy) => void
 }
 
 /**
- * Wrap Promise to CancellablePromise, with `cancel` method
+ * Wrap promise to CancellablePromise, with `cancel` method
  */
-export function wrap<Done>(
-  promise: CancellablePromise<Done> | PromiseLike<Done> | Promise<Done>
-): CancellablePromise<Done> {
-  let cancelPromise: cancelHandler | undefined
+export const cancellable = <Done>(
+  promise: PromiseLike<Done>,
+  abort?: () => void
+): CancellablePromise<Done> => {
+  let cancel: any
   const cancelable = new Promise<never>((_, reject) => {
-    cancelPromise = function(strategy) {
+    cancel = (strategy?: Strategy) => {
       reject(new CancelledError(strategy))
-      if (cancel in promise && typeof promise[cancel] === 'function') {
-        promise[cancel]()
-      }
+      abort && abort()
     }
   })
 
-  // return race of two Promises, with exposed `[cancel]()` method
+  // return race of two Promises, with exposed `.cancel()` method
   // to cancel our `cancelable` promise, created above, to finish race
-  return Object.assign(Promise.race([promise, cancelable]), {
-    [cancel]: cancelPromise!,
+  return assign(Promise.race([promise, cancelable]), { cancel })
+}
+
+/**
+ * Creates defered promise
+ */
+export const defer = <Done>(): {
+  rs: (value?: Done | PromiseLike<Done> | undefined) => void
+  rj: (reason?: any) => void
+  req: Promise<Done>
+} => {
+  const ret: any = {}
+  ret.req = new Promise((resolve, reject) => {
+    ret.rs = resolve
+    ret.rj = reject
   })
+  return ret
 }
