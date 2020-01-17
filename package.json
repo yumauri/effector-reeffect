@@ -1,6 +1,6 @@
 {
   "name": "effector-reeffect",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "Concurrent effects for Effector",
   "author": "Victor Didenko <yumaa.verdin@gmail.com> (https://yumaa.name)",
   "license": "MIT",
