@@ -27,7 +27,7 @@ export const cancellable = <Done>(
 }
 
 /**
- * Creates defered promise
+ * Creates deferred promise
  */
 export const defer = <Done>(): {
   rs: (value?: Done | PromiseLike<Done> | undefined) => void

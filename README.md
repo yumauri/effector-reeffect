@@ -9,7 +9,7 @@
 ReEffects for [Effector](https://github.com/zerobias/effector) ☄️<br>
 Like regular Effects, but better :)
 
-- Supports different launch strategies: TAKE_FIRST, TAKE_LAST, TAKE_EVERY
+- Supports different launch strategies: TAKE_FIRST, TAKE_LAST, TAKE_EVERY, QUEUE, RACE
 - Handles promises cancellation
 - Can handle _logic_ cancellation
 
@@ -23,6 +23,8 @@ Like regular Effects, but better :)
   - [TAKE_EVERY](#take_every)
   - [TAKE_FIRST](#take_first)
   - [TAKE_LAST](#take_last)
+  - [QUEUE](#queue)
+  - [RACE](#race)
 - [Properties](#properties)
 - [Options](#options)
 - [Cancellation](#cancellation)
@@ -31,6 +33,7 @@ Like regular Effects, but better :)
   - [ky](#ky)
   - [request](#request)
   - [XMLHttpRequest](#xmlhttprequest)
+- [FAQ](#faq)
 - [Sponsored](#sponsored)
 
 ## Install
@@ -103,6 +106,26 @@ Second effect call will be immediately rejected with `CancelledError` (handler w
 
 Second effect call will reject all currently pending operations (if any) with `CancelledError`.
 
+### QUEUE
+
+<img width="539" alt="QUEUE" src="https://github.com/yumauri/effector-reeffect/blob/master/images/QUEUE.png?raw=true">
+
+Second effect will not be launched until all other pending effects are finished.
+
+### RACE
+
+<img width="412" alt="RACE" src="https://github.com/yumauri/effector-reeffect/blob/master/images/RACE.png?raw=true">
+
+First finished effect will win the race and cancel all other pending effects with `CancelledError`.
+
+This strategy is a bit different, then first four. You can call them "**→IN** strategies", while RACE is "**OUT→** strategy".
+
+ReEffect checks **→IN** strategy in the moment effect was launched. Effect, launched with _TAKE_LAST_ strategy, will cancel all currently pending effects, regardless of their strategies. Effect, launched with _QUEUE_ strategy, will be placed in queue to wait all currently pending effects, regardless of their strategies. And so on.
+
+**OUT→** strategy is checked, when effect is fulfilled (but not cancelled). Effect with _RACE_ strategy, upon finished, will cancel all other pending effects, regardless of their strategies.
+
+It should be noted, that due to asynchronous cancellation, `cancelled` events for loser effects will happen _after_ main `done`/`fail` event, and _after_ `pending` is set to `false`.
+
 ## Properties
 
 ReEffect has few new properties:
@@ -114,7 +137,8 @@ ReEffect has few new properties:
 
 `createReEffect` function accepts same arguments as usual Effect, with few possible additions in config:
 
-- `strategy`: this strategy will be considered as default, instead of `TAKE_EVERY`. Possible values: `TAKE_EVERY`, `TAKE_FIRST`, `TAKE_LAST`. **Note, that this values are _Symbols_, you _must_ import them from package!**
+- `strategy`: this strategy will be considered as default, instead of `TAKE_EVERY`. Possible values: `TAKE_EVERY`, `TAKE_FIRST`, `TAKE_LAST`, `QUEUE` or `RACE`.
+- `feedback`: if `true` — puts `strategy` field into `done`, `fail` or `cancelled` event's payload. With `false` by default ReEffect behaves just like usual Effect, with exactly the same results.
 - `limit`: maximum count of simultaneously running operation, by default `Infinity`. If new effect call will exceed this value, call will be immediately rejected with `LimitExceededError` error.
 
 ```javascript
@@ -122,14 +146,23 @@ const fetchUser = createReEffect('fetchUser', {
   handler: ({ id }) =>
     fetch(`https://example.com/users/${id}`).then(res => res.json()),
   strategy: TAKE_LAST,
+  feedback: true,
   limit: 3,
 })
 ```
 
-ReEffect, created with `createReEffect` function, behave like usual Effect, with one difference: in addition to effect's `payload` you can specify _strategy_ as a second argument (or first, if effect doesn't have payload). This strategy will override default strategy for this effect (but will not replace default strategy).
+ReEffect, created with `createReEffect` function, behave like usual Effect, with one difference: in addition to effect's `payload` you can specify _strategy_ as a second argument (or use config object). This strategy will override default strategy for this effect (but will not replace default strategy).
 
 ```javascript
+// this are equivalent calls
 fetchUser({ id: 2 }, TAKE_EVERY)
+fetchUser({ id: 2 }, { strategy: TAKE_EVERY })
+fetchUser({ params: { id: 2 }, strategy: TAKE_EVERY })
+
+// or if your effect doesn't have payload
+fetchAllUsers(undefined, RACE)
+fetchAllUsers(undefined, { strategy: RACE })
+fetchAllUsers({ strategy: RACE })
 ```
 
 ## Cancellation
@@ -147,10 +180,10 @@ import { createReEffect, TAKE_LAST } from 'effector-reeffect'
 
 const reeffect = createReEffect({ strategy: TAKE_LAST })
 
-reeffect.watch(_ => console.log('reeffect called', _))
-reeffect.done.watch(_ => console.log('reeffect done', _))
-reeffect.fail.watch(_ => console.log('reeffect fail', _))
-reeffect.cancelled.watch(_ => console.log('reeffect cancelled', _))
+reeffect.watch(_ => console.log('reeffect called:', _))
+reeffect.done.watch(_ => console.log('reeffect done:', _))
+reeffect.fail.watch(_ => console.log('reeffect fail:', _))
+reeffect.cancelled.watch(_ => console.log('reeffect cancelled:', _))
 
 reeffect.use(
   params =>
@@ -169,15 +202,13 @@ reeffect(2)
 If you will run code above, you will get
 
 ```
-reeffect called { params: 1, strategy: Symbol(TAKE_LAST) }
-reeffect called { params: 2, strategy: Symbol(TAKE_LAST) }
-reeffect cancelled { params: 1,
-  strategy: Symbol(TAKE_LAST),
-  error:
-   Error: Cancelled due to "TAKE_LAST" strategy, new effect was added }
+reeffect called: 1
+reeffect called: 2
+reeffect cancelled: { params: 1,
+  error: Error: Cancelled due to "TAKE_LAST", new effect was added }
 -> AHA! TIMEOUT FROM EFFECT WITH PARAMS: 1
 -> AHA! TIMEOUT FROM EFFECT WITH PARAMS: 2
-reeffect done { params: 2, strategy: Symbol(TAKE_LAST), result: 'done' }
+reeffect done: { params: 2, result: 'done' }
 ```
 
 As you can see, first effect call was rejected and cancelled, but timeout itself was not cancelled, and printed message.
@@ -189,10 +220,10 @@ import { createReEffect, TAKE_LAST } from 'effector-reeffect'
 
 const reeffect = createReEffect({ strategy: TAKE_LAST })
 
-reeffect.watch(_ => console.log('reeffect called', _))
-reeffect.done.watch(_ => console.log('reeffect done', _))
-reeffect.fail.watch(_ => console.log('reeffect fail', _))
-reeffect.cancelled.watch(_ => console.log('reeffect cancelled', _))
+reeffect.watch(_ => console.log('reeffect called:', _))
+reeffect.done.watch(_ => console.log('reeffect done:', _))
+reeffect.fail.watch(_ => console.log('reeffect fail:', _))
+reeffect.cancelled.watch(_ => console.log('reeffect cancelled:', _))
 
 reeffect.use((params, onCancel) => {
   let timeout
@@ -212,14 +243,12 @@ reeffect(2)
 Now ReEffect know, how to cancel your Promise's logic, and will do it while cancelling operation:
 
 ```
-reeffect called { params: 1, strategy: Symbol(TAKE_LAST) }
-reeffect called { params: 2, strategy: Symbol(TAKE_LAST) }
-reeffect cancelled { params: 1,
-  strategy: Symbol(TAKE_LAST),
-  error:
-   Error: Cancelled due to "TAKE_LAST" strategy, new effect was added }
+reeffect called: 1
+reeffect called: 2
+reeffect cancelled: { params: 1,
+  error: Error: Cancelled due to "TAKE_LAST", new effect was added }
 -> AHA! TIMEOUT FROM EFFECT WITH PARAMS: 2
-reeffect done { params: 2, strategy: Symbol(TAKE_LAST), result: 'done' }
+reeffect done: { params: 2, result: 'done' }
 ```
 
 This could be done with any asynchronous operation, which supports cancellation or abortion.
@@ -312,6 +341,22 @@ reeffect.use(({ id }, onCancel) => {
     xhr.send()
   })
 })
+```
+
+## FAQ
+
+### Can I use ReEffect with Domain?
+
+Yes! Alongside with `createReEffect` ReEffect package exports factory `createReEffectFactory`, you can use it to wrap `createEffect` from domain:
+
+```javascript
+import { createDomain } from 'effector'
+import { createReEffectFactory } from 'effector-reeffect'
+
+const domain = createDomain()
+const createReEffect = createReEffectFactory(domain.createEffect)
+const fetchUser = createReEffect(/* ... */)
+// -> fetchUser will belong to domain
 ```
 
 ## Sponsored

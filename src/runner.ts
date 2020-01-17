@@ -209,7 +209,7 @@ const fin = <Payload>(
 }
 
 /**
- * Helper node to resolve or reject defered promise
+ * Helper node to resolve or reject deferred promise
  */
 const sidechain = createNode({
   node: [
