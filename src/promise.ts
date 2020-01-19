@@ -34,10 +34,11 @@ export const defer = <Done>(): {
   rj: (reason?: any) => void
   req: Promise<Done>
 } => {
-  const ret: any = {}
-  ret.req = new Promise((resolve, reject) => {
-    ret.rs = resolve
-    ret.rj = reject
+  const deferred: any = {}
+  deferred.req = new Promise((resolve, reject) => {
+    deferred.rs = resolve
+    deferred.rj = reject
   })
-  return ret
+  deferred.req.catch(() => {})
+  return deferred
 }
