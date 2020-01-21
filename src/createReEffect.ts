@@ -36,6 +36,7 @@ export const createReEffectFactory = (
     cancelled,
     cancel,
     running,
+    inFlight: instance.inFlight,
 
     push: (promise: CancellablePromise<Done>) => running.push(promise),
     unpush: (promise?: CancellablePromise<Done>) => {

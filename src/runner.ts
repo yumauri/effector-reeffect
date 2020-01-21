@@ -1,4 +1,4 @@
-import { createNode, Event, launch, step, Step } from 'effector'
+import { createNode, Event, launch, step, Step, Store } from 'effector'
 import { CancelledError, LimitExceededError, ReEffectError } from './error'
 import { QUEUE, RACE, Strategy, TAKE_FIRST, TAKE_LAST } from './strategy'
 import { cancellable, CancellablePromise, defer } from './promise'
@@ -28,6 +28,7 @@ interface RunnerScope<Payload, Done, Fail> {
   readonly feedback: boolean
   readonly limit: number
   readonly running: CancellablePromise<any>[]
+  readonly inFlight: Store<number>
   readonly push: (promise: CancellablePromise<any>) => number
   readonly unpush: (promise?: CancellablePromise<any>) => number
   readonly cancelAll: (strategy?: Strategy) => void
@@ -70,6 +71,7 @@ const seq = <Payload, Done, Fail>() => [
         feedback,
         limit,
         running,
+        inFlight,
         push,
         unpush,
         cancelAll,
@@ -77,7 +79,15 @@ const seq = <Payload, Done, Fail>() => [
     ) {
       strategy = (args && args.strategy) || strategy
 
-      const scope = { params, strategy, feedback, push, unpush, cancelAll }
+      const scope = {
+        params,
+        strategy,
+        feedback,
+        push,
+        unpush,
+        cancelAll,
+        inFlight,
+      }
       const go = run(
         scope,
         getHandler(),
@@ -124,6 +134,7 @@ interface Scope<Payload> {
   readonly push: (promise: CancellablePromise<any>) => number
   readonly unpush: (promise?: CancellablePromise<any>) => number
   readonly cancelAll: (strategy?: Strategy) => void
+  readonly inFlight: Store<number>
 }
 
 /**
@@ -166,17 +177,18 @@ const run = <Payload, Done>(
  * onResolve / onReject / onCancel universal handler
  */
 const fin = <Payload>(
-  { params, unpush, strategy, feedback, cancelAll }: Scope<Payload>,
-  target: Array<Event<any> | Step>,
+  { params, unpush, strategy, feedback, cancelAll, inFlight }: Scope<Payload>,
+  target: Array<Event<any> | Store<any> | Step>,
   field: 'result' | 'error',
   fn: (data: any) => void
 ) => (promise?: CancellablePromise<any>) => (data: any) => {
   const payload: any[] = []
+  const runningCount = unpush(promise)
 
   // - if this was last event in `running`
   // - or strategy is RACE
   // - or this is single `cancelled` event
-  if (!unpush(promise) || strategy === RACE || target.length === 1) {
+  if (!runningCount || strategy === RACE || target.length === 1) {
     const body = { params, [field]: data }
     if (feedback) {
       body.strategy = strategy
@@ -198,8 +210,8 @@ const fin = <Payload>(
   }
 
   // add sidechain to always resolve/reject promise
-  target.push(sidechain)
-  payload.push([fn, data])
+  target.push(inFlight, sidechain)
+  payload.push(runningCount, [fn, data])
 
   launch({
     target,
