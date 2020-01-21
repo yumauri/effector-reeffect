@@ -114,7 +114,7 @@ Second effect will not be launched until all other pending effects are finished.
 
 ### RACE
 
-<img width="412" alt="RACE" src="https://github.com/yumauri/effector-reeffect/blob/master/images/RACE.png?raw=true">
+<img width="409" alt="RACE" src="https://github.com/yumauri/effector-reeffect/blob/master/images/RACE.png?raw=true">
 
 First finished effect will win the race and cancel all other pending effects with `CancelledError`.
 
