@@ -32,3 +32,9 @@ export class LimitExceededError extends ReEffectError {
     )
   }
 }
+
+export class TimeoutError extends ReEffectError {
+  constructor(timeout: number) {
+    super('Cancelled due to timeout of "' + timeout + '"ms')
+  }
+}

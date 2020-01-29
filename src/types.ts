@@ -9,11 +9,13 @@ export interface CreateReEffectConfig<Payload, Done> {
   strategy?: Strategy
   feedback?: boolean
   limit?: number
+  timeout?: number
 }
 
 export interface ReEffectConfig<Payload> {
   params?: Payload
   strategy?: Strategy
+  timeout?: number
 }
 
 interface CallableReEffect<Payload, Done> {

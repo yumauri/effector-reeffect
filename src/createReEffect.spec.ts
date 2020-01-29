@@ -1,6 +1,6 @@
 import { createDomain, createEvent, forward, is } from 'effector'
 import { createReEffectFactory } from './createReEffect'
-import { CancelledError, LimitExceededError } from './error'
+import { CancelledError, LimitExceededError, TimeoutError } from './error'
 import { QUEUE, RACE, TAKE_EVERY, TAKE_FIRST, TAKE_LAST } from './strategy'
 
 console.error = jest.fn()
@@ -778,7 +778,7 @@ test('createReEffect with Effector API, success', async () => {
   })
   event()
 
-  await new Promise(resolve => setTimeout(resolve, 1))
+  await new Promise(resolve => setTimeout(resolve, 10))
 
   expect(fn).toHaveBeenCalledTimes(2)
 
@@ -821,7 +821,7 @@ test('createReEffect with Effector API, failure', async () => {
   })
   event()
 
-  await new Promise(resolve => setTimeout(resolve, 1))
+  await new Promise(resolve => setTimeout(resolve, 10))
 
   expect(fn).toHaveBeenCalledTimes(2)
 
@@ -877,4 +877,39 @@ test('createReEffect with feedback', async () => {
     strategy: TAKE_EVERY,
     result: 'test',
   })
+})
+
+test('createReEffect with default timeout', async () => {
+  expect.assertions(1)
+
+  const createReEffect = createReEffectFactory()
+  const reeffect = createReEffect<number, string>({
+    timeout: 100,
+    handler: () =>
+      new Promise<string>(resolve => setTimeout(() => resolve('test'), 1000)),
+  })
+
+  const result = await reeffect(22).catch(error => error)
+  expect(result).toEqual(expect.any(TimeoutError))
+})
+
+test('createReEffect with effect timeout', async () => {
+  expect.assertions(1)
+
+  const createReEffect = createReEffectFactory()
+  const reeffect = createReEffect<number, string>({
+    handler: () =>
+      new Promise<string>(resolve => setTimeout(() => resolve('test'), 100)),
+  })
+
+  const result = await Promise.all([
+    reeffect({ params: 11, timeout: 10 }).catch(error => error),
+    reeffect(22),
+    reeffect(33, { timeout: 50 }).catch(error => error),
+  ])
+  expect(result).toEqual([
+    expect.any(TimeoutError),
+    'test',
+    expect.any(TimeoutError),
+  ])
 })

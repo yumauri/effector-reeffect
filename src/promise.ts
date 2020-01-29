@@ -1,4 +1,4 @@
-import { CancelledError } from './error'
+import { CancelledError, TimeoutError } from './error'
 import { Strategy } from './strategy'
 import { assign } from './tools'
 
@@ -11,13 +11,27 @@ export type CancellablePromise<T> = Promise<T> & {
  */
 export const cancellable = <Done>(
   promise: PromiseLike<Done>,
-  abort?: () => void
+  abort?: () => void,
+  timeout?: number
 ): CancellablePromise<Done> => {
   let cancel: any
   const cancelable = new Promise<never>((_, reject) => {
-    cancel = (strategy?: Strategy) => {
-      reject(new CancelledError(strategy))
+    let timeoutId
+    const rejectWith: {
+      (Cls: typeof CancelledError): (strategy?: Strategy) => void
+      (Cls: typeof TimeoutError): (timeout: number) => void
+    } = Cls => arg => {
+      clearTimeout(timeoutId)
+      reject(new Cls(arg))
       abort && abort()
+    }
+
+    // set `.cancel()` callback
+    cancel = rejectWith(CancelledError)
+
+    // set timeout boundary
+    if (typeof timeout === 'number') {
+      timeoutId = setTimeout(rejectWith(TimeoutError), timeout, timeout)
     }
   })
 

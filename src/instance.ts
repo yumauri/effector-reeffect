@@ -22,9 +22,9 @@ export const patchInstance = <Payload, Done, Fail>(
   instance.create = (paramsOrConfig, _, [strategyOrConfig]) => {
     // prettier-ignore
     const config = (
-      paramsOrConfig && (paramsOrConfig as any).strategy
+      paramsOrConfig && ((paramsOrConfig as any).strategy || (paramsOrConfig as any).timeout)
         ? paramsOrConfig
-        : strategyOrConfig && (strategyOrConfig as any).strategy
+        : strategyOrConfig && ((strategyOrConfig as any).strategy || (strategyOrConfig as any).timeout)
           ? strategyOrConfig
           : { strategy: strategyOrConfig }
     ) as ReEffectConfig<Payload>
@@ -32,7 +32,10 @@ export const patchInstance = <Payload, Done, Fail>(
     const req = defer<Done>()
     launch<any>(instance, {
       params: config === paramsOrConfig ? config.params : paramsOrConfig,
-      args: { strategy: config.strategy },
+      args: {
+        strategy: config.strategy,
+        timeout: config.timeout,
+      },
       req,
     })
     return req.req
