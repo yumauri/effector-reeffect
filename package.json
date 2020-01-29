@@ -23,11 +23,11 @@
   "size-limit": [
     {
       "path": "pkg/dist-web/index.js",
-      "limit": "1433 B"
+      "limit": "1537 B"
     },
     {
       "path": "pkg/dist-node/index.js",
-      "limit": "1404 B"
+      "limit": "1506 B"
     }
   ],
   "@pika/pack": {
@@ -69,14 +69,14 @@
     "@pika/plugin-build-web": "^0.8.1",
     "@pika/plugin-ts-standard-pkg": "^0.8.1",
     "@size-limit/preset-small-lib": "^3.0.0",
-    "@types/jest": "^24.9.0",
-    "effector": "^20.11.0",
-    "jest": "^24.9.0",
+    "@types/jest": "^25.1.0",
+    "effector": "^20.11.4",
+    "jest": "^25.1.0",
     "pika-plugin-package.json": "^1.0.2",
     "prettier": "^1.19.1",
-    "ts-jest": "^24.3.0",
+    "ts-jest": "^25.0.0",
     "ts-node": "^8.6.2",
-    "tslint": "^5.20.1",
+    "tslint": "^6.0.0",
     "tslint-config-prettier": "^1.18.0",
     "tslint-config-security": "^1.16.0",
     "tslint-config-standard-plus": "^2.3.0",
@@ -84,7 +84,7 @@
     "yaspeller": "^6.0.2"
   },
   "peerDependencies": {
-    "effector": "^20.11.0"
+    "effector": "^20.11.4"
   },
   "engines": {
     "node": ">=10.17.0"

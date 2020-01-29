@@ -13,7 +13,10 @@ import {
 
 interface RunnerParams<Payload> {
   readonly params: Payload
-  readonly args?: { strategy?: Strategy }
+  readonly args?: {
+    strategy?: Strategy
+    timeout?: number
+  }
   readonly req: ReturnType<typeof defer>
 }
 
@@ -27,6 +30,7 @@ interface RunnerScope<Payload, Done, Fail> {
   readonly strategy: Strategy
   readonly feedback: boolean
   readonly limit: number
+  readonly timeout?: number
   readonly running: CancellablePromise<any>[]
   readonly inFlight: Store<number>
   readonly push: (promise: CancellablePromise<any>) => number
@@ -70,6 +74,7 @@ const seq = <Payload, Done, Fail>() => [
         strategy,
         feedback,
         limit,
+        timeout,
         running,
         inFlight,
         push,
@@ -78,10 +83,12 @@ const seq = <Payload, Done, Fail>() => [
       }: RunnerScope<Payload, Done, Fail>
     ) {
       strategy = (args && args.strategy) || strategy
+      timeout = (args && args.timeout) || timeout
 
       const scope = {
         params,
         strategy,
+        timeout,
         feedback,
         push,
         unpush,
@@ -130,6 +137,7 @@ const seq = <Payload, Done, Fail>() => [
 interface Scope<Payload> {
   readonly params: Payload
   readonly strategy: Strategy
+  readonly timeout?: number
   readonly feedback: boolean
   readonly push: (promise: CancellablePromise<any>) => number
   readonly unpush: (promise?: CancellablePromise<any>) => number
@@ -142,7 +150,7 @@ interface Scope<Payload> {
  * Or immediately cancel effect, if error is passed
  */
 const run = <Payload, Done>(
-  { params, push }: Scope<Payload>,
+  { params, push, timeout }: Scope<Payload>,
   handler: Handler<Payload, Done>,
   onResolve: ReturnType<typeof fin>,
   onReject: ReturnType<typeof fin>,
@@ -161,7 +169,7 @@ const run = <Payload, Done>(
   }
 
   if (Object(result) === result && typeof (result as any).then === 'function') {
-    const promise = cancellable(result as any, cancel)
+    const promise = cancellable(result as any, cancel, timeout)
     push(promise)
     return promise.then(onResolve(promise), error =>
       error instanceof CancelledError

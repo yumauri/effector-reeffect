@@ -1,4 +1,9 @@
-import { CancelledError, LimitExceededError, ReEffectError } from './error'
+import {
+  CancelledError,
+  LimitExceededError,
+  ReEffectError,
+  TimeoutError,
+} from './error'
 import { QUEUE, RACE, TAKE_EVERY, TAKE_FIRST, TAKE_LAST } from './strategy'
 
 test('ReEffectError class', () => {
@@ -19,4 +24,8 @@ test('CancelledError class', () => {
 
 test('LimitExceededError class', () => {
   expect(new LimitExceededError(1, 1) instanceof ReEffectError).toBe(true)
+})
+
+test('TimeoutError class', () => {
+  expect(new TimeoutError(1) instanceof ReEffectError).toBe(true)
 })

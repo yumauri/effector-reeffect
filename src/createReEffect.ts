@@ -33,6 +33,7 @@ export const createReEffectFactory = (
     strategy: config.strategy || TAKE_EVERY,
     feedback: config.feedback || false,
     limit: config.limit || Infinity,
+    timeout: config.timeout,
     cancelled,
     cancel,
     running,
