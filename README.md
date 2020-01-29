@@ -140,6 +140,7 @@ ReEffect has few new properties:
 - `strategy`: this strategy will be considered as default, instead of `TAKE_EVERY`. Possible values: `TAKE_EVERY`, `TAKE_FIRST`, `TAKE_LAST`, `QUEUE` or `RACE`.
 - `feedback`: if `true` — puts `strategy` field into `done`, `fail` or `cancelled` event's payload. With `false` by default ReEffect behaves just like usual Effect, with exactly the same results.
 - `limit`: maximum count of simultaneously running operation, by default `Infinity`. If new effect call will exceed this value, call will be immediately rejected with `LimitExceededError` error.
+- `timeout`: timeout for effect execution, in milliseconds. If timeout is exceeded — effect will be rejected with `TimeoutError`.
 
 ```javascript
 const fetchUser = createReEffect('fetchUser', {
@@ -148,10 +149,13 @@ const fetchUser = createReEffect('fetchUser', {
   strategy: TAKE_LAST,
   feedback: true,
   limit: 3,
+  timeout: 5000,
 })
 ```
 
-ReEffect, created with `createReEffect` function, behave like usual Effect, with one difference: in addition to effect's `payload` you can specify _strategy_ as a second argument (or use config object). This strategy will override default strategy for this effect (but will not replace default strategy).
+ReEffect, created with `createReEffect` function, behave like usual Effect, with one difference: in addition to effect's `payload` you can specify _strategy_ as a second argument. This strategy will override default strategy for this effect (but will not replace default strategy).
+
+You can also specify config object, with `strategy` or/and `timeout`.
 
 ```javascript
 // this are equivalent calls
@@ -163,6 +167,10 @@ fetchUser({ params: { id: 2 }, strategy: TAKE_EVERY })
 fetchAllUsers(undefined, RACE)
 fetchAllUsers(undefined, { strategy: RACE })
 fetchAllUsers({ strategy: RACE })
+
+// with timeout
+fetchUser({ id: 42 }, { timeout: 5000 })
+fetchUser({ params: { id: 42 }, strategy: TAKE_EVERY, timeout: 5000 })
 ```
 
 ## Cancellation
