@@ -3,13 +3,7 @@ import { CancelledError, LimitExceededError, ReEffectError } from './error'
 import { QUEUE, RACE, Strategy, TAKE_FIRST, TAKE_LAST } from './strategy'
 import { cancellable, CancellablePromise, defer } from './promise'
 import { assign } from './tools'
-import {
-  CancelledPayload,
-  DonePayload,
-  FailPayload,
-  FinallyPayload,
-  Handler,
-} from './types'
+import { CancelledPayload, FinallyPayload, Handler } from './types'
 
 interface RunnerParams<Payload> {
   readonly params: Payload
@@ -22,20 +16,24 @@ interface RunnerParams<Payload> {
 
 interface RunnerScope<Payload, Done, Fail> {
   readonly getHandler: () => Handler<Payload, Done>
-  readonly done: Event<DonePayload<Payload, Done>>
-  readonly fail: Event<FailPayload<Payload, Fail>>
-  readonly anyway: Event<FinallyPayload<Payload, Done, Fail>>
-  readonly cancelled: Event<CancelledPayload<Payload>>
-  readonly cancel: Event<void>
+  readonly finally: Event<FinallyPayload<Payload, Done, Fail>>
   readonly strategy: Strategy
   readonly feedback: boolean
   readonly limit: number
   readonly timeout?: number
+  readonly cancelled: Event<CancelledPayload<Payload>>
+  readonly cancel: Event<void>
   readonly running: CancellablePromise<any>[]
   readonly inFlight: Store<number>
   readonly push: (promise: CancellablePromise<any>) => number
   readonly unpush: (promise?: CancellablePromise<any>) => number
   readonly cancelAll: (strategy?: Strategy) => void
+}
+
+const enum Result {
+  DONE,
+  FAIL,
+  CANCEL,
 }
 
 /**
@@ -45,12 +43,7 @@ export const patchRunner = <Payload, Done, Fail>(
   runner: Step,
   scope: RunnerScope<Payload, Done, Fail>
 ) => {
-  assign(runner.scope, scope, {
-    // prepend `finally` event to add 'status' field automatically, and replace in scope
-    anyway: runner.scope.anyway.prepend(payload =>
-      assign({ status: payload.result ? 'done' : 'fail' }, payload)
-    ),
-  })
+  assign(runner.scope, scope)
   runner.meta.onCopy.push('cancelled', 'cancel')
   runner.seq = seq<Payload, Done, Fail>()
 
@@ -67,14 +60,12 @@ const seq = <Payload, Done, Fail>() => [
       { params, args, req }: RunnerParams<Payload>,
       {
         getHandler,
-        done,
-        fail,
-        anyway,
-        cancelled,
+        finally: anyway,
         strategy,
         feedback,
         limit,
         timeout,
+        cancelled,
         running,
         inFlight,
         push,
@@ -98,9 +89,9 @@ const seq = <Payload, Done, Fail>() => [
       const go = run(
         scope,
         getHandler(),
-        fin(scope, [anyway, done], 'result', req.rs),
-        fin(scope, [anyway, fail], 'error', req.rj),
-        fin(scope, [cancelled], 'error', req.rj)
+        fin(scope, anyway, Result.DONE, req.rs),
+        fin(scope, anyway, Result.FAIL, req.rj),
+        fin(scope, cancelled, Result.CANCEL, req.rj)
       )
 
       if (running.length >= limit) {
@@ -186,44 +177,40 @@ const run = <Payload, Done>(
  */
 const fin = <Payload>(
   { params, unpush, strategy, feedback, cancelAll, inFlight }: Scope<Payload>,
-  target: Array<Event<any> | Store<any> | Step>,
-  field: 'result' | 'error',
+  target: Event<any>,
+  type: Result,
   fn: (data: any) => void
 ) => (promise?: CancellablePromise<any>) => (data: any) => {
-  const payload: any[] = []
   const runningCount = unpush(promise)
+  const targets: (Event<any> | Store<number> | Step)[] = [inFlight, sidechain]
+  const payloads: any[] = [runningCount, [fn, data]]
 
+  // - if this is `cancelled` event
   // - if this was last event in `running`
   // - or strategy is RACE
-  // - or this is single `cancelled` event
-  if (!runningCount || strategy === RACE || target.length === 1) {
-    const body = { params, [field]: data }
-    if (feedback) {
-      body.strategy = strategy
-    }
-    let i = target.length
-    while (i--) {
-      payload.push(body)
-    }
+  if (type === Result.CANCEL || !runningCount || strategy === RACE) {
+    const body: any =
+      type === Result.DONE
+        ? { params, result: data, status: 'done' }
+        : type === Result.FAIL
+        ? { params, error: data, status: 'fail' }
+        : { params, error: data }
+    if (feedback) body.strategy = strategy
+
+    targets.unshift(target)
+    payloads.unshift(body)
 
     // check OUT-> strategies
 
     // only when event is `done` or `fail` (with `anyway`)
-    if (strategy === RACE && target.length > 1) {
+    if (strategy === RACE && type !== Result.CANCEL) {
       cancelAll(strategy)
     }
-  } else {
-    // we are in the middle of running effects -> do not launch `done/fail`
-    target = []
   }
 
-  // add sidechain to always resolve/reject promise
-  target.push(inFlight, sidechain)
-  payload.push(runningCount, [fn, data])
-
   launch({
-    target,
-    params: payload,
+    target: targets,
+    params: payloads,
     defer: true,
   } as any)
 }
