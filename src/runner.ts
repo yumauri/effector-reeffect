@@ -71,7 +71,8 @@ const seq = <Payload, Done, Fail>() => [
         push,
         unpush,
         cancelAll,
-      }: RunnerScope<Payload, Done, Fail>
+      }: RunnerScope<Payload, Done, Fail>,
+      { branch }: { branch: number }
     ) {
       strategy = (args && args.strategy) || strategy
       timeout = (args && args.timeout) || timeout
@@ -85,6 +86,7 @@ const seq = <Payload, Done, Fail>() => [
         unpush,
         cancelAll,
         inFlight,
+        branch,
       }
       const go = run(
         scope,
@@ -134,6 +136,7 @@ interface Scope<Payload> {
   readonly unpush: (promise?: CancellablePromise<any>) => number
   readonly cancelAll: (strategy?: Strategy) => void
   readonly inFlight: Store<number>
+  readonly branch: number
 }
 
 /**
@@ -176,7 +179,15 @@ const run = <Payload, Done>(
  * onResolve / onReject / onCancel universal handler
  */
 const fin = <Payload>(
-  { params, unpush, strategy, feedback, cancelAll, inFlight }: Scope<Payload>,
+  {
+    params,
+    unpush,
+    strategy,
+    feedback,
+    cancelAll,
+    inFlight,
+    branch,
+  }: Scope<Payload>,
   target: Event<any>,
   type: Result,
   fn: (data: any) => void
@@ -212,6 +223,7 @@ const fin = <Payload>(
     target: targets,
     params: payloads,
     defer: true,
+    branch,
   } as any)
 }
 
