@@ -369,10 +369,8 @@ const fetchUser = createReEffect(/* ... */)
 
 ### Can I use ReEffect with `fork`?
 
-Probably, no :(
-
-I didn't try, though, but fork implementation, as I see, is [hardcoded to native Effects](https://github.com/zerobias/effector/blob/master/src/effector/fork.js#L98), so, ReEffect might be corrupted after fork.
-
+Probably, no :(<br/>
+I didn't try, though, but fork implementation, as I see, is [hardcoded to native Effects](https://github.com/zerobias/effector/blob/master/src/effector/fork.js#L98), so, ReEffect might be corrupted after fork.<br/>
 There is [issue #6](https://github.com/yumauri/effector-reeffect/issues/6) to track this case.
 
 ## Sponsored
