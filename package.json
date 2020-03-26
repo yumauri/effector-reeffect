@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "dev": "ts-node src/index.ts",
-    "test": "jest --config jestconfig.json",
+    "test": "jest",
     "build": "rm -rf pkg/ && pika build",
     "format": "prettier --write \"src/**/*.ts\"",
     "lint": "tslint -p tsconfig.json && yarn spell",
@@ -70,7 +70,7 @@
     "@pika/plugin-ts-standard-pkg": "^0.9.2",
     "@size-limit/preset-small-lib": "^4.3.1",
     "@types/jest": "^25.1.4",
-    "effector": "^20.12.2",
+    "effector": "^20.13.4",
     "jest": "^25.1.0",
     "pika-plugin-package.json": "^1.0.2",
     "prettier": "^1.19.1",
