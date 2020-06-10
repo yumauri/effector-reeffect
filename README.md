@@ -381,6 +381,32 @@ I didn't try it, but most probably no :(<br />
 First of all, after `attach` you will get regular Effect, not ReEffect, and secondarily, looks like `attach` implementation [replaces `req` parameter](https://github.com/zerobias/effector/blob/d2f711c9fc702436e44dcf9637e4e7ee5a884570/src/effector/attach.js#L34), which highly likely will break ReEffect functionality.<br />
 There is [issue #8](https://github.com/yumauri/effector-reeffect/issues/8) to track this case.
 
+If you want just attach store to your ReEffect, you can try technique, called "CoEffect":
+
+```javascript
+/**
+ * Creates CoEffect - ReEffect, attached to the store value
+ */
+function createCoEffect({ store, handler, ...config }) {
+  const fx = createReEffect(config)
+
+  // save original `use`
+  const use = fx.use
+
+  // replace original `use`, to be able to change handler on CoEffect
+  // you can omit this, if you don't intend to replace CoEffect handler
+  fx.use = fn => (handler = fn)
+
+  // on each store change replace handler for ReEffect,
+  // so it will be called with actual store value every time
+  store.watch(value => {
+    use((payload, onCancel) => handler(payload, value, onCancel))
+  })
+
+  return fx
+}
+```
+
 ## Sponsored
 
 [<img src="https://setplex.com/img/logo.png" alt="Setplex" width="236">](https://setplex.com)
