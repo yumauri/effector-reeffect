@@ -305,6 +305,8 @@ reeffect.use(({ id }, onCancel) => {
 
 ### [request](https://github.com/request/request)
 
+_**Note**: request has been [deprecated](https://github.com/request/request/issues/3142), you probably should not use it._
+
 Request HTTP client supports [`.abort()` method](https://github.com/request/request/issues/772):
 
 ```javascript
@@ -327,10 +329,10 @@ If you happen to use good old `XMLHttpRequest`, I will not blame you (but others
 reeffect.use(({ id }, onCancel) => {
   let xhr
   onCancel(() => xhr.abort())
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     xhr = new XMLHttpRequest()
     xhr.open('GET', `https://example.com/users/${id}`)
-    xhr.onload = function() {
+    xhr.onload = function () {
       if (this.status >= 200 && this.status < 300) {
         resolve(xhr.response)
       } else {
@@ -340,7 +342,7 @@ reeffect.use(({ id }, onCancel) => {
         })
       }
     }
-    xhr.onerror = function() {
+    xhr.onerror = function () {
       reject({
         status: this.status,
         statusText: xhr.statusText,
@@ -370,8 +372,14 @@ const fetchUser = createReEffect(/* ... */)
 ### Can I use ReEffect with `fork`?
 
 Probably, no :(<br/>
-I didn't try, though, but fork implementation, as I see, is [hardcoded to native Effects](https://github.com/zerobias/effector/blob/master/src/effector/fork.js#L98), so, ReEffect might be corrupted after fork.<br/>
+I didn't try, though, but `fork` implementation, as I see, is [hardcoded to native Effects](https://github.com/zerobias/effector/blob/d2f711c9fc702436e44dcf9637e4e7ee5a884570/src/effector/fork.js#L209), so, ReEffect might be corrupted after fork.<br/>
 There is [issue #6](https://github.com/yumauri/effector-reeffect/issues/6) to track this case.
+
+### Can I use ReEffect with `attach`?
+
+I didn't try it, but most probably no :(<br />
+First of all, after `attach` you will get regular Effect, not ReEffect, and secondarily, looks like `attach` implementation [replaces `req` parameter](https://github.com/zerobias/effector/blob/d2f711c9fc702436e44dcf9637e4e7ee5a884570/src/effector/attach.js#L34), which highly likely will break ReEffect functionality.<br />
+There is [issue #8](https://github.com/yumauri/effector-reeffect/issues/8) to track this case.
 
 ## Sponsored
 
