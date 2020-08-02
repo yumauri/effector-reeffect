@@ -20,7 +20,7 @@ export const patchInstance = <Payload, Done, Fail>(
   own(instance, [cancelled, cancel])
 
   // adjust create function, to be able to set strategy, alongside with params
-  instance.create = (paramsOrConfig, _, [strategyOrConfig]) => {
+  instance.create = (paramsOrConfig, [strategyOrConfig]) => {
     // prettier-ignore
     const config = (
       paramsOrConfig && ((paramsOrConfig as any).strategy || (paramsOrConfig as any).timeout)

@@ -50,7 +50,6 @@ export interface MutableReEffect<Payload, Done, Fail = Error>
   graphite: Step,
   create: (
     paramsOrConfig: Payload | ReEffectConfig<Payload> | undefined,
-    _,
     [maybeStrategyOrConfig]: [ReEffectConfig<Payload> | Strategy | undefined]
   ) => Promise<Done>
 }
