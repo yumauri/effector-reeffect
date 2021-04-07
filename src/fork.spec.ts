@@ -235,14 +235,13 @@ test('createReEffect in scope: cancelled reeffect does not hanging up `allSettle
   })
 
   forward({
-    from: delayFx.done,
-    to: reeffect.cancel,
+    from: start,
+    to: reeffect.prepend(() => 5),
   })
 
-  start.watch(() => {
-    const bindReeffect = scopeBind(reeffect)
-
-    bindReeffect(5)
+  forward({
+    from: delayFx.done,
+    to: reeffect.cancel,
   })
 
   $store.on(reeffect.done, (state, { result }) => state + result)
