@@ -260,7 +260,7 @@ test('createReEffect in scope: cancelled reeffect does not hanging up `allSettle
   `)
 })
 
-test('createReEffect in scope: failed reeffect does not hanging up `allSettled`', async () => {
+test('createReEffect in scope: failed reeffect does not hanging up `allSettled` and resolves in scope correctly', async () => {
   const fail = jest.fn()
 
   const app = createDomain()
@@ -283,6 +283,7 @@ test('createReEffect in scope: failed reeffect does not hanging up `allSettled`'
   })
 
   $store.on(reeffect.done, (state, { result }) => state + result)
+  $store.on(reeffect.fail, () => -1)
 
   const scope = fork(app)
 
@@ -295,7 +296,7 @@ test('createReEffect in scope: failed reeffect does not hanging up `allSettled`'
 
   expect(serialize(scope)).toMatchInlineSnapshot(`
     Object {
-      "$store": 0,
+      "$store": -1,
     }
   `)
 })
