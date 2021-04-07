@@ -213,6 +213,52 @@ test('createReEffect resolves in scope when called as `inner effect`', async () 
   `)
 })
 
+test('createReEffect in scope: cancelled reeffect does not hanging up `allSettled`', async () => {
+  const app = createDomain()
+  const createReEffect = createReEffectFactory(app.createEffect)
+  const start = app.createEvent()
+  const $store = app.createStore(0, { name: '$store', sid: '$store' })
+  const reeffect = createReEffect<number, number>({
+    async handler(p) {
+      await new Promise(r => setTimeout(r, 900))
+
+      return Promise.resolve(p);
+    },
+  })
+  const delayFx = app.createEffect<number, number>(async (t) => new Promise(r => setTimeout(() => r(t), t)));
+
+  forward({
+    from: start,
+    to: delayFx.prepend(() => 250)
+  })
+
+  forward({
+    from: delayFx.done,
+    to: reeffect.cancel
+  })
+
+  start.watch(() => {
+    const bindReeffect = scopeBind(reeffect)
+
+    bindReeffect(5)
+  })
+
+  $store.on(reeffect.done, (state, { result }) => state + result)
+
+  const scope = fork(app)
+
+  await allSettled(start, {
+    scope,
+    params: undefined,
+  })
+
+  expect(serialize(scope)).toMatchInlineSnapshot(`
+    Object {
+      "$store": 5,
+    }
+  `)
+})
+
 test('createReEffect in scope: multiple calls aren`t hanging up `allSettled`', async () => {
   const cancelled = jest.fn()
 
