@@ -116,7 +116,7 @@ test('createReEffect resolves in scope with scopeBind', async () => {
   const start = app.createEvent()
   const $store = app.createStore(0, { name: '$store', sid: '$store' })
   const reeffect = createReEffect<number, number>({
-    async handler(p) {
+    handler(p) {
       return p
     },
   })
@@ -150,9 +150,7 @@ test('async createReEffect resolves in scope with scopeBind', async () => {
   const $store = app.createStore(0, { name: '$store', sid: '$store' })
   const reeffect = createReEffect<number, number>({
     async handler(p) {
-      await new Promise(r => setTimeout(r, 300))
-
-      return Promise.resolve(p)
+      return new Promise<number>(resolve => setTimeout(() => resolve(p), 30))
     },
   })
 
@@ -185,7 +183,7 @@ test('createReEffect resolves in scope when called as `inner effect`', async () 
   const $store = app.createStore(0, { name: '$store', sid: '$store' })
   const reeffect = createReEffect<number, number>({
     async handler(p) {
-      return p
+      return new Promise<number>(resolve => setTimeout(() => resolve(p), 30))
     },
   })
   const effect = app.createEffect(async () => {
@@ -220,7 +218,7 @@ test('createReEffect in scope: cancelled reeffect does not hanging up `allSettle
   const $store = app.createStore(0, { name: '$store', sid: '$store' })
   const reeffect = createReEffect<number, number>({
     async handler(p) {
-      await new Promise(r => setTimeout(r, 900))
+      await new Promise(r => setTimeout(r, 50))
 
       return Promise.resolve(p)
     },
@@ -231,7 +229,7 @@ test('createReEffect in scope: cancelled reeffect does not hanging up `allSettle
 
   forward({
     from: start,
-    to: delayFx.prepend(() => 250),
+    to: delayFx.prepend(() => 25),
   })
 
   forward({
@@ -255,7 +253,7 @@ test('createReEffect in scope: cancelled reeffect does not hanging up `allSettle
 
   expect(serialize(scope)).toMatchInlineSnapshot(`
     Object {
-      "$store": 5,
+      "$store": 0,
     }
   `)
 })
@@ -269,7 +267,7 @@ test('createReEffect in scope: failed reeffect does not hanging up `allSettled` 
   const $store = app.createStore(0, { name: '$store', sid: '$store' })
   const reeffect = createReEffect<number, number>({
     async handler() {
-      await new Promise(r => setTimeout(r, 900))
+      await new Promise(r => setTimeout(r, 30))
 
       throw new Error('failed!')
     },
@@ -311,7 +309,7 @@ test('createReEffect in scope: multiple calls aren`t hanging up `allSettled`', a
   const $store = app.createStore(0, { name: '$store', sid: '$store' })
   const reeffect = createReEffect({
     async handler() {
-      return new Promise<number>(resolve => setTimeout(() => resolve(5), 300))
+      return new Promise<number>(resolve => setTimeout(() => resolve(5), 30))
     },
   })
 
@@ -359,7 +357,7 @@ test('createReEffect in scope: TAKE_EVERY', async () => {
   const $store = app.createStore(0, { name: '$store', sid: '$store' })
   const reeffect = createReEffect<number, number>({
     async handler(p) {
-      return new Promise<number>(resolve => setTimeout(() => resolve(p), 300))
+      return new Promise<number>(resolve => setTimeout(() => resolve(p), 30))
     },
   })
 
@@ -400,7 +398,7 @@ test('createReEffect in scope: TAKE_FIRST', async () => {
   const $store = app.createStore(0, { name: '$store', sid: '$store' })
   const reeffect = createReEffect<number, number>({
     async handler(p) {
-      return new Promise<number>(resolve => setTimeout(() => resolve(p), 300))
+      return new Promise<number>(resolve => setTimeout(() => resolve(p), 30))
     },
     strategy: TAKE_FIRST,
   })
@@ -442,7 +440,7 @@ test('createReEffect in scope: TAKE_LAST', async () => {
   const $store = app.createStore(0, { name: '$store', sid: '$store' })
   const reeffect = createReEffect<number, number>({
     async handler(p) {
-      return new Promise<number>(resolve => setTimeout(() => resolve(p), 300))
+      return new Promise<number>(resolve => setTimeout(() => resolve(p), 30))
     },
     strategy: TAKE_LAST,
   })
@@ -484,7 +482,7 @@ test('createReEffect in scope: QUEUE', async () => {
   const $store = app.createStore(0, { name: '$store', sid: '$store' })
   const reeffect = createReEffect<number, number>({
     async handler(p) {
-      return new Promise<number>(resolve => setTimeout(() => resolve(p), 300))
+      return new Promise<number>(resolve => setTimeout(() => resolve(p), 30))
     },
     strategy: QUEUE,
   })
@@ -526,7 +524,7 @@ test('createReEffect in scope: RACE', async () => {
   const $store = app.createStore(0, { name: '$store', sid: '$store' })
   const reeffect = createReEffect<number, number>({
     async handler(p) {
-      const timeout = p === 5 ? 100 : 600
+      const timeout = p === 5 ? 10 : 20
 
       return new Promise<number>(resolve =>
         setTimeout(() => resolve(p), timeout)
