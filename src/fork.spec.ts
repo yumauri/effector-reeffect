@@ -152,7 +152,7 @@ test('async createReEffect resolves in scope with scopeBind', async () => {
     async handler(p) {
       await new Promise(r => setTimeout(r, 300))
 
-      return Promise.resolve(p);
+      return Promise.resolve(p)
     },
   })
 
@@ -222,19 +222,21 @@ test('createReEffect in scope: cancelled reeffect does not hanging up `allSettle
     async handler(p) {
       await new Promise(r => setTimeout(r, 900))
 
-      return Promise.resolve(p);
+      return Promise.resolve(p)
     },
   })
-  const delayFx = app.createEffect<number, number>(async (t) => new Promise(r => setTimeout(() => r(t), t)));
+  const delayFx = app.createEffect<number, number>(
+    async t => new Promise(r => setTimeout(() => r(t), t))
+  )
 
   forward({
     from: start,
-    to: delayFx.prepend(() => 250)
+    to: delayFx.prepend(() => 250),
   })
 
   forward({
     from: delayFx.done,
-    to: reeffect.cancel
+    to: reeffect.cancel,
   })
 
   start.watch(() => {
@@ -269,9 +271,7 @@ test('createReEffect in scope: multiple calls aren`t hanging up `allSettled`', a
   const $store = app.createStore(0, { name: '$store', sid: '$store' })
   const reeffect = createReEffect({
     async handler() {
-      return new Promise<number>(resolve =>
-        setTimeout(() => resolve(5), 300)
-      )
+      return new Promise<number>(resolve => setTimeout(() => resolve(5), 300))
     },
   })
 
@@ -279,17 +279,17 @@ test('createReEffect in scope: multiple calls aren`t hanging up `allSettled`', a
 
   forward({
     from: start,
-    to: reeffect
+    to: reeffect,
   })
 
   forward({
     from: start,
-    to: secondTrigger
+    to: secondTrigger,
   })
 
   forward({
     from: secondTrigger,
-    to: reeffect
+    to: reeffect,
   })
 
   $store.on(reeffect.done, (state, { result }) => state + result)
@@ -319,9 +319,7 @@ test('createReEffect in scope: TAKE_EVERY', async () => {
   const $store = app.createStore(0, { name: '$store', sid: '$store' })
   const reeffect = createReEffect<number, number>({
     async handler(p) {
-      return new Promise<number>(resolve =>
-        setTimeout(() => resolve(p), 300)
-      )
+      return new Promise<number>(resolve => setTimeout(() => resolve(p), 300))
     },
   })
 
@@ -362,9 +360,7 @@ test('createReEffect in scope: TAKE_FIRST', async () => {
   const $store = app.createStore(0, { name: '$store', sid: '$store' })
   const reeffect = createReEffect<number, number>({
     async handler(p) {
-      return new Promise<number>(resolve =>
-        setTimeout(() => resolve(p), 300)
-      )
+      return new Promise<number>(resolve => setTimeout(() => resolve(p), 300))
     },
     strategy: TAKE_FIRST,
   })
@@ -406,9 +402,7 @@ test('createReEffect in scope: TAKE_LAST', async () => {
   const $store = app.createStore(0, { name: '$store', sid: '$store' })
   const reeffect = createReEffect<number, number>({
     async handler(p) {
-      return new Promise<number>(resolve =>
-        setTimeout(() => resolve(p), 300)
-      )
+      return new Promise<number>(resolve => setTimeout(() => resolve(p), 300))
     },
     strategy: TAKE_LAST,
   })
@@ -450,9 +444,7 @@ test('createReEffect in scope: QUEUE', async () => {
   const $store = app.createStore(0, { name: '$store', sid: '$store' })
   const reeffect = createReEffect<number, number>({
     async handler(p) {
-      return new Promise<number>(resolve =>
-        setTimeout(() => resolve(p), 300)
-      )
+      return new Promise<number>(resolve => setTimeout(() => resolve(p), 300))
     },
     strategy: QUEUE,
   })
