@@ -260,6 +260,46 @@ test('createReEffect in scope: cancelled reeffect does not hanging up `allSettle
   `)
 })
 
+test('createReEffect in scope: failed reeffect does not hanging up `allSettled`', async () => {
+  const fail = jest.fn()
+
+  const app = createDomain()
+  const createReEffect = createReEffectFactory(app.createEffect)
+  const start = app.createEvent()
+  const $store = app.createStore(0, { name: '$store', sid: '$store' })
+  const reeffect = createReEffect<number, number>({
+    async handler() {
+      await new Promise(r => setTimeout(r, 900))
+
+      throw new Error('failed!')
+    },
+  })
+
+  reeffect.fail.watch(fail)
+
+  forward({
+    from: start,
+    to: reeffect.prepend(() => 5),
+  })
+
+  $store.on(reeffect.done, (state, { result }) => state + result)
+
+  const scope = fork(app)
+
+  await allSettled(start, {
+    scope,
+    params: undefined,
+  })
+
+  expect(fail).toBeCalledTimes(1)
+
+  expect(serialize(scope)).toMatchInlineSnapshot(`
+    Object {
+      "$store": 0,
+    }
+  `)
+})
+
 test('createReEffect in scope: multiple calls aren`t hanging up `allSettled`', async () => {
   const cancelled = jest.fn()
 
