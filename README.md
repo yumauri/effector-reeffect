@@ -409,4 +409,6 @@ function createCoEffect({ store, handler, ...config }) {
 
 ## Sponsored
 
-[<img src="https://setplex.com/img/logo.png" alt="Setplex" width="236">](https://setplex.com)
+[<img src="https://setplex.com/img/logo.png" alt="Setplex OTT Platform" width="236">](https://setplex.com/en/)
+
+[Setplex OTT Platform](https://setplex.com/en/)
