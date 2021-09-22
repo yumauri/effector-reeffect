@@ -1,4 +1,4 @@
-import { createNode, Event, launch, step, Step, Store } from 'effector'
+import { createNode, Event, launch, step, Node as Step, Store } from 'effector'
 import { CancelledError, LimitExceededError, ReEffectError } from './error'
 import { QUEUE, RACE, Strategy, TAKE_FIRST, TAKE_LAST } from './strategy'
 import { cancellable, CancellablePromise, defer } from './promise'

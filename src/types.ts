@@ -1,4 +1,4 @@
-import { Effect, Event, Step } from 'effector'
+import { Effect, Event, Node as Step } from 'effector'
 import { ReEffectError } from './error'
 import { Strategy } from './strategy'
 
@@ -39,6 +39,8 @@ export interface ReEffect<Payload, Done, Fail = Error>
     (handler: Handler<Payload, Done>): ReEffect<Payload, Done, Fail>
     getCurrent(): Handler<Payload, Done>
   }
+  // FIXME: effects do not have thru field, while events do - ReEffect type now fails in scopeBind because of that
+  readonly thru: any
 }
 
 // prettier-ignore

@@ -1,4 +1,4 @@
-import { Event, launch, Step, step } from 'effector'
+import { Event, launch, Node as Step, step } from 'effector'
 import { CancelledPayload, MutableReEffect, ReEffectConfig } from './types'
 import { defer } from './promise'
 import { assign, own } from './tools'

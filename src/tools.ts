@@ -1,4 +1,4 @@
-import { Step } from 'effector'
+import { Node as Step } from 'effector'
 
 /**
  * Shortcut for smaller bundle size
