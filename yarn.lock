@@ -3261,10 +3261,10 @@ ee-first@1.1.1:
   resolved "https://registry.yarnpkg.com/ee-first/-/ee-first-1.1.1.tgz#590c61156b0ae2f4f0255732a158b266bc56b21d"
   integrity sha1-WQxhFWsK4vTwJVcyoViyZrxWsh0=
 
-effector@^21.8.11:
-  version "21.8.11"
-  resolved "https://registry.yarnpkg.com/effector/-/effector-21.8.11.tgz#fbe35fb754a9918fb33781a9a408b635218ff41a"
-  integrity sha512-yEdPMYsocx5rZb/zvnPrkM77tpbnTqWZ/W/JYWxojhUD+ZW04Mpa8ezL0X1LwceYnTHAj2RscLCKK9IFD85lcA==
+effector@^22.1.1:
+  version "22.1.1"
+  resolved "https://registry.yarnpkg.com/effector/-/effector-22.1.1.tgz#588283015e2c15283be76ae48f4396e8c6ea2ed6"
+  integrity sha512-qQBsVslsh1tgZ0KJQ4VamkhW7xV/AqS3PwsRFYgsGwmuEnaWZ7XI2hH5BmGBsiE3/56lSVHNKQwY1SUcnaIW5A==
 
 ejs@^2.6.1:
   version "2.7.4"
