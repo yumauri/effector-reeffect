@@ -343,6 +343,42 @@ test('createReEffect in scope: multiple calls aren`t hanging up `allSettled`', a
   `)
 })
 
+test('createReEffect in scope: handler for scope works', async () => {
+  const createReEffect = createReEffectFactory()
+
+  const app = createDomain()
+  const start = app.createEvent()
+  const $store = app.createStore(0, { name: '$store', sid: '$store' })
+  const reeffect = createReEffect({
+    async handler() {
+      return 5
+    },
+    sid: 'reeffect',
+  })
+
+  $store.on(reeffect.done, (state, { result }) => state + result)
+
+  forward({
+    from: start,
+    to: reeffect,
+  })
+
+  const scope = fork({
+    handlers: [[reeffect, async () => 7]],
+  })
+
+  await allSettled(start, {
+    scope,
+    params: undefined,
+  })
+
+  expect(serialize(scope)).toMatchInlineSnapshot(`
+    Object {
+      "$store": 7,
+    }
+  `)
+})
+
 test('createReEffect in scope: TAKE_EVERY', async () => {
   const cancelled = jest.fn()
 

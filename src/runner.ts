@@ -20,17 +20,17 @@ import { cancellable, CancellablePromise, defer } from './promise'
 import { assign, getForkPage, setMeta } from './tools'
 import { CancelledPayload, FinallyPayload, Handler } from './types'
 
-interface RunnerParams<Payload> {
+interface RunnerParams<Payload, Done> {
   readonly params: Payload
   readonly args?: {
     strategy?: Strategy
     timeout?: number
   }
   readonly req: ReturnType<typeof defer>
+  readonly handler: Handler<Payload, Done>
 }
 
 interface RunnerScope<Payload, Done, Fail> {
-  readonly handler: Handler<Payload, Done>
   readonly finally: Event<FinallyPayload<Payload, Done, Fail>>
   readonly strategy: Strategy
   readonly feedback: boolean
@@ -89,12 +89,11 @@ const seq = <Payload, Done, Fail>(anyway: Event<any>) => [
   }),
   step.run({
     fn(
-      { params, args, req }: RunnerParams<Payload>,
+      { params, args, req, handler }: RunnerParams<Payload, Done>,
       runScope: RunnerScope<Payload, Done, Fail>,
       { scope }: { scope: { [id: string]: any } | null }
     ) {
       let {
-        handler,
         strategy,
         feedback,
         limit,
