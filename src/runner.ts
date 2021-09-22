@@ -1,8 +1,23 @@
-import { createNode, Event, launch, step, Node as Step, Store } from 'effector'
+import {
+  createNode,
+  Event,
+  launch,
+  step,
+  Node as Step,
+  Store,
+  createEvent,
+} from 'effector'
 import { CancelledError, LimitExceededError, ReEffectError } from './error'
-import { QUEUE, RACE, Strategy, TAKE_FIRST, TAKE_LAST } from './strategy'
+import {
+  QUEUE,
+  RACE,
+  Strategy,
+  TAKE_FIRST,
+  TAKE_LAST,
+  TAKE_EVERY,
+} from './strategy'
 import { cancellable, CancellablePromise, defer } from './promise'
-import { assign, getForkPage } from './tools'
+import { assign, getForkPage, setMeta } from './tools'
 import { CancelledPayload, FinallyPayload, Handler } from './types'
 
 interface RunnerParams<Payload> {
@@ -196,6 +211,8 @@ const run = <Payload, Done>(
 /**
  * onResolve / onReject / onCancel universal handler
  */
+const takeEveryFinally = (createEvent as any)({ named: 'takeEveryFinally' })
+setMeta(takeEveryFinally, 'needFxCounter', 'dec')
 const fin = <Payload>(
   {
     params,
@@ -213,6 +230,10 @@ const fin = <Payload>(
   const runningCount = unpush(promise)
   const targets: (Event<any> | Store<number> | Step)[] = [inFlight, sidechain]
   const payloads: any[] = [runningCount, [fn, data]]
+
+  if (runningCount && strategy === TAKE_EVERY) {
+    targets.push(takeEveryFinally)
+  }
 
   // - if this is `cancelled` event
   // - if this was last event in `running`
