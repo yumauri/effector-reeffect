@@ -1,4 +1,4 @@
-import { Node as Step } from 'effector'
+import { Node as Step, Scope } from 'effector'
 
 /**
  * Shortcut for smaller bundle size
@@ -31,3 +31,9 @@ export const setMeta = (
 ) => {
   unit.graphite.meta[field] = value
 }
+
+/**
+ * Helper from Effector's code, to get fork page
+ * https://github.com/effector/effector/blob/master/src/effector/getter.ts
+ */
+export const getForkPage = (val: any): Scope | void => val.scope
