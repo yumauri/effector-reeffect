@@ -4,7 +4,6 @@ import { CancellablePromise } from './promise'
 import { patchInstance } from './instance'
 import { patchRunner } from './runner'
 import { Strategy, TAKE_EVERY } from './strategy'
-import { setMeta } from './tools'
 
 /**
  * High-order function over createEffect
@@ -55,7 +54,6 @@ export const createReEffectFactory = (
 
   patchRunner<Payload, Done, Fail>(instance.graphite.scope.runner, scope as any)
   patchInstance<Payload, Done, Fail>(instance, scope)
-  setMeta(instance.cancelled, 'needFxCounter', 'dec')
 
   return instance
 }
