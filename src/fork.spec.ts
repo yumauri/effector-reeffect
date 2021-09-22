@@ -499,8 +499,6 @@ test('createReEffect in scope: QUEUE', async () => {
     params: undefined,
   })
 
-  expect(cancelled).toBeCalledTimes(2)
-
   expect(serialize(scope)).toMatchInlineSnapshot(`
     Object {
       "$store": 5,
