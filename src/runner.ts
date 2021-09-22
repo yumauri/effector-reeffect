@@ -44,7 +44,6 @@ export const patchRunner = <Payload, Done, Fail>(
   scope: RunnerScope<Payload, Done, Fail>
 ) => {
   assign(runner.scope, scope)
-  runner.meta.onCopy.push('cancelled', 'cancel')
   runner.seq = seq<Payload, Done, Fail>()
 
   // make `cancel` event work
