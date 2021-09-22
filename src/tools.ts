@@ -19,3 +19,15 @@ export const own = (
     owner.family.links.push(graphite)
   }
 }
+
+/**
+ * Helper from Effector's code, to set meta of the fields
+ * https://github.com/effector/effector/blob/master/src/effector/getter.ts
+ */
+export const setMeta = (
+  unit: { graphite: Step },
+  field: string,
+  value: any
+) => {
+  unit.graphite.meta[field] = value
+}
