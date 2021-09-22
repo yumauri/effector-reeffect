@@ -37,7 +37,8 @@ export interface ReEffect<Payload, Done, Fail = Error>
   readonly cancel: Event<void>
   readonly use: {
     (handler: Handler<Payload, Done>): ReEffect<Payload, Done, Fail>
-    getCurrent(): Handler<Payload, Done>
+    // FIXME: original effect does not have onCancel in handler, types are incompatible again :(
+    getCurrent(): (params: Payload) => Promise<Done>
   }
   // FIXME: effects do not have thru field, while events do - ReEffect type now fails in scopeBind because of that
   readonly thru: any
