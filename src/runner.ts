@@ -6,6 +6,7 @@ import {
   Node as Step,
   Store,
   createEvent,
+  Scope,
 } from 'effector'
 import { CancelledError, LimitExceededError, ReEffectError } from './error'
 import {
@@ -16,8 +17,13 @@ import {
   TAKE_LAST,
   TAKE_EVERY,
 } from './strategy'
-import { cancellable, CancellablePromise, defer } from './promise'
-import { assign, getForkPage, setMeta } from './tools'
+import {
+  cancellable,
+  CancellablePromise,
+  defer,
+  createRunning,
+} from './promise'
+import { assign, getForkPage, setMeta, read } from './tools'
 import { CancelledPayload, FinallyPayload, Handler } from './types'
 
 interface RunnerParams<Payload, Done> {
@@ -41,9 +47,11 @@ interface RunnerScope<Payload, Done, Fail> {
   readonly running: CancellablePromise<any>[]
   readonly inFlight: Store<number>
   readonly anyway: Event<any>
-  readonly push: (promise: CancellablePromise<any>) => number
-  readonly unpush: (promise?: CancellablePromise<any>) => number
-  readonly cancelAll: (strategy?: Strategy) => void
+  readonly push: ReturnType<typeof createRunning>['push']
+  readonly unpush: ReturnType<typeof createRunning>['unpush']
+  readonly cancelAll: ReturnType<typeof createRunning>['cancelAll']
+  readonly $running: ReturnType<typeof createRunning>['$running']
+  readonly scope: Scope
 }
 
 const enum Result {
@@ -59,17 +67,21 @@ export const patchRunner = <Payload, Done, Fail>(
   runner: Step,
   runnerScope: RunnerScope<Payload, Done, Fail>
 ) => {
+  const runs = createRunning<Done>()
   assign(runner.scope, runnerScope)
-  runner.seq = seq<Payload, Done, Fail>(runnerScope.anyway)
+  runner.seq = seq<Payload, Done, Fail>(runnerScope.anyway, runs as any)
 
   // make `cancel` event work
-  runnerScope.cancel.watch(() => runnerScope.cancelAll())
+  runnerScope.cancel.watch(() => runs.cancelAll())
 }
 
 /**
  * Create new sequence for runner
  */
-const seq = <Payload, Done, Fail>(anyway: Event<any>) => [
+const seq = <Payload, Done, Fail>(
+  anyway: Event<any>,
+  runs: ReturnType<typeof createRunning>
+) => [
   step.compute({
     safe: true,
     filter: false,
@@ -93,18 +105,7 @@ const seq = <Payload, Done, Fail>(anyway: Event<any>) => [
       runScope: RunnerScope<Payload, Done, Fail>,
       { scope }: { scope: { [id: string]: any } | null }
     ) {
-      let {
-        strategy,
-        feedback,
-        limit,
-        timeout,
-        cancelled,
-        running,
-        inFlight,
-        push,
-        unpush,
-        cancelAll,
-      } = runScope
+      let { strategy, feedback, limit, timeout, cancelled, inFlight } = runScope
 
       strategy = (args && args.strategy) || strategy
       timeout = (args && args.timeout) || timeout
@@ -114,11 +115,12 @@ const seq = <Payload, Done, Fail>(anyway: Event<any>) => [
         strategy,
         timeout,
         feedback,
-        push,
-        unpush,
-        cancelAll,
+        push: runs.push,
+        unpush: runs.unpush,
+        cancelAll: runs.cancelAll,
         inFlight,
         scope,
+        $running: runs.$running,
       }
       const go = run(
         runnerScope,
@@ -127,6 +129,8 @@ const seq = <Payload, Done, Fail>(anyway: Event<any>) => [
         fin(runnerScope, anyway, Result.FAIL, req.rj),
         fin(runnerScope, cancelled, Result.CANCEL, req.rj)
       )
+
+      const running = read(scope as Scope)(runs.$running)
 
       if (running.length >= limit) {
         return go(new LimitExceededError(limit, running.length))
@@ -139,7 +143,11 @@ const seq = <Payload, Done, Fail>(anyway: Event<any>) => [
       }
 
       if (strategy === TAKE_LAST && running.length > 0) {
-        cancelAll(strategy)
+        launch({
+          target: runs.cancelAll,
+          params: strategy,
+          scope: scope as Scope,
+        })
       }
 
       if (strategy === QUEUE && running.length > 0) {
@@ -147,10 +155,28 @@ const seq = <Payload, Done, Fail>(anyway: Event<any>) => [
           // this is analogue for Promise.allSettled()
           Promise.all(running.map(p => p.catch(() => {})))
         )
-        push(promise)
+        launch({
+          target: runs.push,
+          params: promise,
+          scope: scope as Scope,
+        })
         return promise.then(
-          () => (unpush(promise), go()),
-          error => (unpush(promise), go(error))
+          () => (
+            launch({
+              target: runs.unpush,
+              params: promise,
+              scope: scope as Scope,
+            }),
+            go()
+          ),
+          error => (
+            launch({
+              target: runs.unpush,
+              params: promise,
+              scope: scope as Scope,
+            }),
+            go(error)
+          )
         )
       }
 
@@ -164,11 +190,12 @@ interface ReEffectScope<Payload> {
   readonly strategy: Strategy
   readonly timeout?: number
   readonly feedback: boolean
-  readonly push: (promise: CancellablePromise<any>) => number
-  readonly unpush: (promise?: CancellablePromise<any>) => number
-  readonly cancelAll: (strategy?: Strategy) => void
+  readonly push: ReturnType<typeof createRunning>['push']
+  readonly unpush: ReturnType<typeof createRunning>['unpush']
+  readonly cancelAll: ReturnType<typeof createRunning>['cancelAll']
   readonly inFlight: Store<number>
   readonly scope: { [id: string]: any } | null
+  readonly $running: ReturnType<typeof createRunning>['$running']
 }
 
 /**
@@ -176,7 +203,7 @@ interface ReEffectScope<Payload> {
  * Or immediately cancel effect, if error is passed
  */
 const run = <Payload, Done>(
-  { params, push, timeout }: ReEffectScope<Payload>,
+  { params, push, timeout, scope }: ReEffectScope<Payload>,
   handler: Handler<Payload, Done>,
   onResolve: ReturnType<typeof fin>,
   onReject: ReturnType<typeof fin>,
@@ -196,7 +223,11 @@ const run = <Payload, Done>(
 
   if (Object(result) === result && typeof (result as any).then === 'function') {
     const promise = cancellable(result as any, cancel, timeout)
-    push(promise)
+    launch({
+      target: push,
+      params: promise,
+      scope: scope as Scope,
+    })
     return promise.then(onResolve(promise), error =>
       error instanceof CancelledError
         ? onCancel(promise)(error)
@@ -221,12 +252,18 @@ const fin = <Payload>(
     cancelAll,
     inFlight,
     scope,
+    $running,
   }: ReEffectScope<Payload>,
   target: Event<any>,
   type: Result,
   fn: (data: any) => void
 ) => (promise?: CancellablePromise<any>) => (data: any) => {
-  const runningCount = unpush(promise)
+  launch({
+    target: unpush,
+    params: promise,
+    scope: scope as Scope,
+  })
+  const runningCount = read(scope as Scope)($running).length
   const targets: (Event<any> | Store<number> | Step)[] = [inFlight, sidechain]
   const payloads: any[] = [runningCount, [fn, data]]
 
@@ -253,7 +290,11 @@ const fin = <Payload>(
 
     // only when event is `done` or `fail` (with `anyway`)
     if (strategy === RACE && type !== Result.CANCEL) {
-      cancelAll(strategy)
+      launch({
+        target: cancelAll,
+        params: strategy,
+        scope: scope as Scope,
+      })
     }
   }
 

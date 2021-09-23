@@ -1,9 +1,8 @@
 import { createEffect as effectorCreateEffect, createEvent } from 'effector'
 import { CreateReEffect, CreateReEffectConfig, ReEffect } from './types'
-import { CancellablePromise } from './promise'
 import { patchInstance } from './instance'
 import { patchRunner } from './runner'
-import { Strategy, TAKE_EVERY } from './strategy'
+import { TAKE_EVERY } from './strategy'
 
 /**
  * High-order function over createEffect
@@ -27,8 +26,6 @@ export const createReEffectFactory = (
         ? nameOrConfig
         : {}
 
-  const running: CancellablePromise<Done>[] = []
-
   const scope = {
     strategy: config.strategy || TAKE_EVERY,
     feedback: config.feedback || false,
@@ -36,21 +33,8 @@ export const createReEffectFactory = (
     timeout: config.timeout,
     cancelled,
     cancel,
-    running,
     inFlight: instance.inFlight,
     anyway: instance.finally,
-
-    push: (promise: CancellablePromise<Done>) => running.push(promise),
-    unpush: (promise?: CancellablePromise<Done>) => {
-      if (promise) {
-        // `running` array should always contain `promise`
-        // no need to check for index === -1
-        running.splice(running.indexOf(promise), 1)
-      }
-      return running.length
-    },
-    cancelAll: (strategy?: Strategy) =>
-      running.map(promise => promise.cancel(strategy)),
   }
 
   patchRunner<Payload, Done, Fail>(instance.graphite.scope.runner, scope as any)

@@ -1,4 +1,4 @@
-import { Node as Step, Scope } from 'effector'
+import { Node as Step, Scope, Store } from 'effector'
 
 /**
  * Shortcut for smaller bundle size
@@ -37,3 +37,6 @@ export const setMeta = (
  * https://github.com/effector/effector/blob/master/src/effector/getter.ts
  */
 export const getForkPage = (val: any): Scope | void => val.scope
+
+export const read = <T = any>(scope?: Scope) => ($store: Store<T>) =>
+  scope ? scope.getState($store) : $store.getState()

@@ -1,4 +1,4 @@
-import { createDomain, forward, scopeBind } from 'effector'
+import { createDomain, forward, scopeBind, guard } from 'effector'
 import { fork, serialize, allSettled } from 'effector'
 import { createReEffectFactory } from './createReEffect'
 import { TAKE_FIRST, TAKE_LAST, QUEUE, RACE } from './strategy'
@@ -37,6 +37,67 @@ test('createReEffect resolves in fork by default', async () => {
 })
 
 test('createReEffect do not affect other forks', async () => {
+  const createReEffect = createReEffectFactory()
+
+  const app = createDomain()
+  const start = app.createEvent<number>()
+  const $store = app.createStore(0, { sid: '$store' })
+  const reeffect = createReEffect({
+    async handler(param: number, onCancel) {
+      await new Promise<void>((rs, rj) => {
+        let id = setTimeout(() => {
+          rs()
+        }, 5 * param)
+
+        onCancel(() => {
+          clearTimeout(id)
+          rj()
+        })
+      })
+
+      return 5 * param
+    },
+  })
+
+  $store.on(reeffect.done, (state, { result }) => state + result)
+
+  forward({
+    from: start,
+    to: reeffect,
+  })
+
+  guard({
+    source: start,
+    filter: p => p === 1000,
+  }).watch(p => {
+    const scopedCancel = scopeBind(reeffect.cancel)
+
+    setTimeout(() => scopedCancel(), p)
+  })
+
+  const scopeAlice = fork(app)
+  const scopeBob = fork(app)
+
+  await allSettled(start, {
+    scope: scopeAlice,
+    params: 10,
+  })
+
+  await allSettled(start, {
+    scope: scopeBob,
+    params: 1000,
+  })
+
+  expect(serialize(scopeAlice)).toMatchInlineSnapshot(`
+    Object {
+      "$store": 50,
+    }
+  `)
+
+  expect(serialize(scopeBob)).toMatchInlineSnapshot(`Object {}`)
+})
+
+test('createReEffect cancelled reeffect do not affect other forks', async () => {
   const createReEffect = createReEffectFactory()
 
   const app = createDomain()

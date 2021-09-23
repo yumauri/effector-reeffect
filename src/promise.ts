@@ -1,9 +1,10 @@
+import { createStore, createEvent } from 'effector'
 import { CancelledError, TimeoutError } from './error'
 import { Strategy } from './strategy'
 import { assign } from './tools'
 
 export type CancellablePromise<T> = Promise<T> & {
-  cancel: (strategy?: Strategy) => void
+  cancel: (strategy?: Strategy | void) => void
 }
 
 /**
@@ -55,4 +56,27 @@ export const defer = <Done>(): {
   })
   deferred.req.catch(() => {})
   return deferred
+}
+
+/**
+ * Creates running promises storage
+ */
+export const createRunning = <Done>() => {
+  const push = createEvent<CancellablePromise<Done>>({ sid: 'internal/push' })
+  const unpush = createEvent<CancellablePromise<Done>>({
+    sid: 'internal/unpush',
+  })
+  const cancelAll = createEvent<Strategy | void>()
+  const $running = createStore<CancellablePromise<Done>[]>([], {
+    sid: 'internal/$running',
+    serialize: 'ignore',
+  })
+    .on(push, (runs, promise) => [...runs, promise])
+    .on(unpush, (runs, promise) => runs.filter(p => p !== promise))
+
+  $running.watch(cancelAll, (runs, strategy) =>
+    runs.forEach(p => p.cancel(strategy))
+  )
+
+  return { $running, push, unpush, cancelAll }
 }
