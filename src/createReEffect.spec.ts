@@ -615,14 +615,14 @@ test('createReEffect with RACE strategy', async () => {
   })
 
   // cancelled event
-  expect(fn.mock.calls[4][0]).toEqual({
+  expect(fn.mock.calls[5][0]).toEqual({
     params: 1000,
     strategy: TAKE_EVERY,
     error: expect.any(CancelledError),
   })
 
   // pending
-  expect(fn.mock.calls[5][0]).toEqual(false)
+  expect(fn.mock.calls[4][0]).toEqual(false)
 })
 
 test('createReEffect with manual cancellation', async () => {
