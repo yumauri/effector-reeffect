@@ -572,7 +572,11 @@ test('createReEffect in scope: QUEUE', async () => {
   const $store = app.createStore(0, { name: '$store', sid: '$store' })
   const reeffect = createReEffect<number, number>({
     async handler(p) {
-      return new Promise<number>(resolve => setTimeout(() => resolve(p), 30))
+      return new Promise<number>(resolve =>
+        setTimeout(() => {
+          resolve(p)
+        }, 30)
+      )
     },
     strategy: QUEUE,
   })
@@ -585,9 +589,13 @@ test('createReEffect in scope: QUEUE', async () => {
     bindReeffect(1)
     bindReeffect(2)
     bindReeffect(3)
+    bindReeffect(4)
+    bindReeffect(5)
   })
 
-  $store.on(reeffect.done, (state, { result }) => state + result)
+  $store.on(reeffect.done, (state, { result }) => {
+    return state + result
+  })
 
   const scope = fork(app)
 

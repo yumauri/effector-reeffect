@@ -241,8 +241,8 @@ const run = <Payload, Done>(
 /**
  * onResolve / onReject / onCancel universal handler
  */
-const takeEveryFinally = (createEvent as any)({ named: 'takeEveryFinally' })
-setMeta(takeEveryFinally, 'needFxCounter', 'dec')
+const internalFinally = (createEvent as any)({ named: 'internalFinally' })
+setMeta(internalFinally, 'needFxCounter', 'dec')
 const fin = <Payload>(
   {
     params,
@@ -267,8 +267,8 @@ const fin = <Payload>(
   const targets: (Event<any> | Store<number> | Step)[] = [inFlight, sidechain]
   const payloads: any[] = [runningCount, [fn, data]]
 
-  if (runningCount && strategy === TAKE_EVERY) {
-    targets.push(takeEveryFinally)
+  if (runningCount && (strategy === TAKE_EVERY || strategy === QUEUE)) {
+    targets.push(internalFinally)
   }
 
   // - if this is `cancelled` event
