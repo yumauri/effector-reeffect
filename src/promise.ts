@@ -1,7 +1,7 @@
-import { createStore, createEvent } from 'effector'
+import { createStore, createEvent, Scope } from 'effector'
 import { CancelledError, TimeoutError } from './error'
 import { Strategy } from './strategy'
-import { assign } from './tools'
+import { assign, read } from './tools'
 
 export type CancellablePromise<T> = Promise<T> & {
   cancel: (strategy?: Strategy | void) => void
@@ -62,21 +62,29 @@ export const defer = <Done>(): {
  * Creates running promises storage
  */
 export const createRunning = <Done>() => {
-  const push = createEvent<CancellablePromise<Done>>({ sid: 'internal/push' })
-  const unpush = createEvent<CancellablePromise<Done>>({
-    sid: 'internal/unpush',
+  // needed to catch the scope when cancelling manually
+  const cancelAllEv = createEvent<Strategy | void>({
+    sid: 'internal/cancelAll',
   })
-  const cancelAll = createEvent<Strategy | void>()
   const $running = createStore<CancellablePromise<Done>[]>([], {
     sid: 'internal/$running',
     serialize: 'ignore',
   })
-    .on(push, (runs, promise) => [...runs, promise])
-    .on(unpush, (runs, promise) => runs.filter(p => p !== promise))
 
-  $running.watch(cancelAll, (runs, strategy) =>
+  $running.watch(cancelAllEv, (runs, strategy) =>
     runs.forEach(p => p.cancel(strategy))
   )
 
-  return { $running, push, unpush, cancelAll }
+  const push = (promise: CancellablePromise<Done>, scope?: Scope) => {
+    read(scope)($running).push(promise)
+  }
+  const unpush = (promise: CancellablePromise<Done>, scope?: Scope) => {
+    if (!promise) return
+    read(scope)($running).splice(read(scope)($running).indexOf(promise), 1)
+  }
+  const cancelAll = (strategy: Strategy | undefined, scope?: Scope) => {
+    read(scope)($running).forEach(p => p.cancel(strategy))
+  }
+
+  return { $running, push, unpush, cancelAll, cancelAllEv }
 }

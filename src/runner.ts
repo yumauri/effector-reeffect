@@ -72,7 +72,7 @@ export const patchRunner = <Payload, Done, Fail>(
   runner.seq = seq<Payload, Done, Fail>(runnerScope.anyway, runs as any)
 
   // make `cancel` event work
-  runnerScope.cancel.watch(() => runs.cancelAll())
+  runnerScope.cancel.watch(() => runs.cancelAllEv())
 }
 
 /**
@@ -143,11 +143,7 @@ const seq = <Payload, Done, Fail>(
       }
 
       if (strategy === TAKE_LAST && running.length > 0) {
-        launch({
-          target: runs.cancelAll,
-          params: strategy,
-          scope: scope as Scope,
-        })
+        runs.cancelAll(strategy, scope as Scope)
       }
 
       if (strategy === QUEUE && running.length > 0) {
@@ -155,28 +151,10 @@ const seq = <Payload, Done, Fail>(
           // this is analogue for Promise.allSettled()
           Promise.all(running.map(p => p.catch(() => {})))
         )
-        launch({
-          target: runs.push,
-          params: promise,
-          scope: scope as Scope,
-        })
+        runs.push(promise, scope as Scope)
         return promise.then(
-          () => (
-            launch({
-              target: runs.unpush,
-              params: promise,
-              scope: scope as Scope,
-            }),
-            go()
-          ),
-          error => (
-            launch({
-              target: runs.unpush,
-              params: promise,
-              scope: scope as Scope,
-            }),
-            go(error)
-          )
+          () => (runs.unpush(promise, scope as Scope), go()),
+          error => (runs.unpush(promise, scope as Scope), go(error))
         )
       }
 
@@ -223,11 +201,7 @@ const run = <Payload, Done>(
 
   if (Object(result) === result && typeof (result as any).then === 'function') {
     const promise = cancellable(result as any, cancel, timeout)
-    launch({
-      target: push,
-      params: promise,
-      scope: scope as Scope,
-    })
+    push(promise, scope as Scope)
     return promise.then(onResolve(promise), error =>
       error instanceof CancelledError
         ? onCancel(promise)(error)
@@ -258,11 +232,8 @@ const fin = <Payload>(
   type: Result,
   fn: (data: any) => void
 ) => (promise?: CancellablePromise<any>) => (data: any) => {
-  launch({
-    target: unpush,
-    params: promise,
-    scope: scope as Scope,
-  })
+  unpush(promise as any, scope as Scope)
+
   const runningCount = read(scope as Scope)($running).length
   const targets: (Event<any> | Store<number> | Step)[] = [inFlight, sidechain]
   const payloads: any[] = [runningCount, [fn, data]]
@@ -286,11 +257,7 @@ const fin = <Payload>(
 
     // only when event is `done` or `fail` (with `anyway`)
     if (strategy === RACE && type !== Result.CANCEL) {
-      launch({
-        target: cancelAll,
-        params: strategy,
-        scope: scope as Scope,
-      })
+      cancelAll(strategy, scope as Scope)
     }
   } else if (runningCount && (strategy === TAKE_EVERY || strategy === QUEUE)) {
     targets.push(internalFinally)
