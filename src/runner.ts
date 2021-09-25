@@ -1,4 +1,4 @@
-import { createNode, Event, launch, step, Step, Store } from 'effector'
+import { createNode, Event, launch, Node, step, Store } from 'effector'
 import { CancelledError, LimitExceededError, ReEffectError } from './error'
 import { QUEUE, RACE, Strategy, TAKE_FIRST, TAKE_LAST } from './strategy'
 import { cancellable, CancellablePromise, defer } from './promise'
@@ -40,11 +40,10 @@ const enum Result {
  * Patch runner, add new events and replace step sequence
  */
 export const patchRunner = <Payload, Done, Fail>(
-  runner: Step,
+  runner: Node,
   scope: RunnerScope<Payload, Done, Fail>
 ) => {
   assign(runner.scope, scope)
-  runner.meta.onCopy.push('cancelled', 'cancel')
   runner.seq = seq<Payload, Done, Fail>()
 
   // make `cancel` event work
@@ -193,7 +192,7 @@ const fin = <Payload>(
   fn: (data: any) => void
 ) => (promise?: CancellablePromise<any>) => (data: any) => {
   const runningCount = unpush(promise)
-  const targets: (Event<any> | Store<number> | Step)[] = [inFlight, sidechain]
+  const targets: (Event<any> | Store<number> | Node)[] = [inFlight, sidechain]
   const payloads: any[] = [runningCount, [fn, data]]
 
   // - if this is `cancelled` event

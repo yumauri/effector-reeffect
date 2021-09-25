@@ -1,6 +1,7 @@
 import { createEffect as effectorCreateEffect, createEvent } from 'effector'
 import { CreateReEffect, CreateReEffectConfig, ReEffect } from './types'
 import { CancellablePromise } from './promise'
+import { getGraph } from './tools'
 import { patchInstance } from './instance'
 import { patchRunner } from './runner'
 import { Strategy, TAKE_EVERY } from './strategy'
@@ -37,7 +38,9 @@ export const createReEffectFactory = (
     cancelled,
     cancel,
     running,
+    finally: instance.finally,
     inFlight: instance.inFlight,
+    getHandler: instance.use.getCurrent,
 
     push: (promise: CancellablePromise<Done>) => running.push(promise),
     unpush: (promise?: CancellablePromise<Done>) => {
@@ -52,7 +55,10 @@ export const createReEffectFactory = (
       running.map(promise => promise.cancel(strategy)),
   }
 
-  patchRunner<Payload, Done, Fail>(instance.graphite.scope.runner, scope as any)
+  patchRunner<Payload, Done, Fail>(
+    getGraph(instance).scope.runner,
+    scope as any
+  )
   patchInstance<Payload, Done, Fail>(instance, scope)
   return instance
 }

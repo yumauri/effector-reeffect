@@ -1,11 +1,11 @@
-import { Event, launch, Step, step } from 'effector'
+import { Event, launch, Node, step } from 'effector'
 import { CancelledPayload, MutableReEffect, ReEffectConfig } from './types'
 import { defer } from './promise'
 import { assign, own } from './tools'
 
 interface InstanceNewEvents<Payload> {
-  readonly cancelled: Event<CancelledPayload<Payload>> & { graphite: Step }
-  readonly cancel: Event<void> & { graphite: Step }
+  readonly cancelled: Event<CancelledPayload<Payload>> & { graphite: Node }
+  readonly cancel: Event<void> & { graphite: Node }
   readonly feedback: boolean
 }
 

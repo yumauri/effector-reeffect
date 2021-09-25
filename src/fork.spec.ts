@@ -1,7 +1,16 @@
-import { createDomain, forward, scopeBind } from 'effector'
-import { fork, serialize, allSettled } from 'effector/fork'
+import {
+  allSettled,
+  createDomain,
+  fork,
+  forward,
+  scopeBind as effectorScopeBind,
+  serialize,
+} from 'effector'
 import { createReEffectFactory } from './createReEffect'
-import { TAKE_FIRST, TAKE_LAST, QUEUE, RACE } from './strategy'
+import { QUEUE, RACE, TAKE_FIRST, TAKE_LAST } from './strategy'
+
+// TODO: scopeBind doesn't support ReEffect as argument
+const scopeBind = effectorScopeBind as any
 
 test('createReEffect resolves in fork by default', async () => {
   const createReEffect = createReEffectFactory()

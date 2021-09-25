@@ -1,4 +1,4 @@
-import { Effect, Event, Step } from 'effector'
+import { Effect, Event, Node } from 'effector'
 import { ReEffectError } from './error'
 import { Strategy } from './strategy'
 
@@ -47,7 +47,7 @@ export interface MutableReEffect<Payload, Done, Fail = Error>
     CallableReEffect<Payload, Done>,
     Mutable<ReEffect<Payload, Done, Fail>>
 {
-  graphite: Step,
+  graphite: Node,
   create: (
     paramsOrConfig: Payload | ReEffectConfig<Payload> | undefined,
     [maybeStrategyOrConfig]: [ReEffectConfig<Payload> | Strategy | undefined]
