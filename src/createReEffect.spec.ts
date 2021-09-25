@@ -527,8 +527,6 @@ test('createReEffect with QUEUE strategy and change handler', async () => {
   await fx
   await reeffect(3).catch(error => error)
 
-  expect(fn).toHaveBeenCalledTimes(9)
-
   // pending
   expect(fn.mock.calls[0][0]).toEqual(false)
   expect(fn.mock.calls[1][0]).toEqual(true)
@@ -548,23 +546,26 @@ test('createReEffect with QUEUE strategy and change handler', async () => {
 
   // pending
   expect(fn.mock.calls[4][0]).toEqual(false)
-  expect(fn.mock.calls[5][0]).toEqual(true)
 
   // finally event
-  expect(fn.mock.calls[6][0]).toEqual({
+  expect(fn.mock.calls[5][0]).toEqual({
     params: 3,
     result: 'second3',
     status: 'done',
   })
 
   // done event
-  expect(fn.mock.calls[7][0]).toEqual({
+  expect(fn.mock.calls[6][0]).toEqual({
     params: 3,
     result: 'second3',
   })
 
   // pending
+  expect(fn.mock.calls[7][0]).toEqual(true)
+
   expect(fn.mock.calls[8][0]).toEqual(false)
+
+  expect(fn).toHaveBeenCalledTimes(9)
 })
 
 test('createReEffect with RACE strategy', async () => {
