@@ -23,7 +23,7 @@ export const createReEffectFactory = (
   const cancel = (createEvent as any)({ named: 'cancel' })
   const inFlightInternal = (createStore as any)(0, {
     named: 'reeffectInFlight',
-  })
+  }).on(instance, s => s + 1)
   const pendingInternal = inFlightInternal.map({
     fn: amount => amount > 0,
     named: 'reeffectPending',
