@@ -224,6 +224,7 @@ const fin = <Payload>(
     strategy,
     feedback,
     cancelAll,
+    inFlight,
     scope,
     $running,
   }: ReEffectScope<Payload>,
@@ -234,8 +235,8 @@ const fin = <Payload>(
   unpush(promise as any, scope as Scope)
 
   const runningCount = read(scope as Scope)($running).length
-  const targets: (Event<any> | Store<number> | Step)[] = [sidechain]
-  const payloads: any[] = [[fn, data]]
+  const targets: (Event<any> | Store<number> | Step)[] = [inFlight, sidechain]
+  const payloads: any[] = [runningCount, [fn, data]]
 
   // - if this is `cancelled` event
   // - if this was last event in `running`
