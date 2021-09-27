@@ -82,6 +82,7 @@ const seq = <Payload, Done, Fail>(
   anyway: Event<any>,
   runs: ReturnType<typeof createRunning>
 ) => [
+  // extract current handler of this reeffect
   step.compute({
     safe: true,
     filter: false,
@@ -213,10 +214,18 @@ const run = <Payload, Done>(
 }
 
 /**
- * onResolve / onReject / onCancel universal handler
+ * In current ReEffect implementation `finally` event fires only at the very end of the current strategy round
+ * This means, that internal fxCounter in scope will not be decrementent properly (increments on each effect start)
+ * and `allSettled` method will never settled - which breaks usage of ReEffect and Fork API
+ *
+ * To fix this, internalFinally event is created to manually decrement this counter after each reeffect is done
  */
 const internalFinally = (createEvent as any)({ named: 'internalFinally' })
 setMeta(internalFinally, 'needFxCounter', 'dec')
+
+/**
+ * onResolve / onReject / onCancel universal handler
+ */
 const fin = <Payload>(
   {
     params,
@@ -238,6 +247,7 @@ const fin = <Payload>(
   const targets: (Event<any> | Store<number> | Step)[] = [sidechain]
   const payloads: any[] = [[fn, data]]
 
+  // Run `finally` or `cancelled`
   // - if this is `cancelled` event
   // - if this was last event in `running`
   // - or strategy is RACE
@@ -254,21 +264,26 @@ const fin = <Payload>(
     payloads.unshift(body)
 
     // check OUT-> strategies
-
     // only when event is `done` or `fail` (with `anyway`)
     if (strategy === RACE && type !== Result.CANCEL) {
       cancelAll(strategy, scope as Scope)
     }
   } else if (runningCount && (strategy === TAKE_EVERY || strategy === QUEUE)) {
+    // add internalFinally event to reconcile the internal fxCounter
     targets.push(internalFinally)
   }
 
+  // internal inFlight also needs to be reconciled with actual running count
+  // if running count is > 0 and this is not RACE winner or Cancellation
+  // then inFlight must be synced in synchronous launch
   if (runningCount && (type !== Result.CANCEL || strategy !== RACE)) {
     launch({
       scope: scope as Scope,
       target: [inFlight],
       params: [runningCount],
     })
+    // otherwise, deferred launch is preferred
+    // this way observable behaviour of reeffect is not changed
   } else {
     targets.unshift(inFlight)
     payloads.unshift(runningCount)

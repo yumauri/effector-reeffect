@@ -21,6 +21,10 @@ export const createReEffectFactory = (
   const instance = (createEffect as any)(nameOrConfig, maybeConfig)
   const cancelled = (createEvent as any)({ named: 'cancelled' })
   const cancel = (createEvent as any)({ named: 'cancel' })
+  // Separate instance of inFlight is created,
+  // because inFlight will be force-synchronized with internal runningCount
+  // Doing this with actual inFlight instance leads to crazy bugs like negative inFlight count
+  // Not doing this at all leads to changes in observable behaviour of ReEffect
   const inFlightInternal = (createStore as any)(0, {
     named: 'reeffectInFlight',
   }).on(instance, s => s + 1)

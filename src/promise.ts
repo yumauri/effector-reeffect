@@ -60,6 +60,7 @@ export const defer = <Done>(): {
 
 /**
  * Creates running promises storage
+ * Store is automatically forked within the scope, which allows to use reeffect easily with fork api
  */
 export const createRunning = <Done>() => {
   // needed to catch the scope when cancelling manually
