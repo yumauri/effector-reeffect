@@ -1,29 +1,29 @@
 import {
+  createEvent,
   createNode,
   Event,
   launch,
-  step,
   Node as Step,
-  Store,
-  createEvent,
   Scope,
+  step,
+  Store,
 } from 'effector'
 import { CancelledError, LimitExceededError, ReEffectError } from './error'
 import {
   QUEUE,
   RACE,
   Strategy,
+  TAKE_EVERY,
   TAKE_FIRST,
   TAKE_LAST,
-  TAKE_EVERY,
 } from './strategy'
 import {
   cancellable,
   CancellablePromise,
-  defer,
   createRunning,
+  defer,
 } from './promise'
-import { assign, getForkPage, setMeta, read } from './tools'
+import { assign, getForkPage, read, setMeta } from './tools'
 import { CancelledPayload, FinallyPayload, Handler } from './types'
 
 interface RunnerParams<Payload, Done> {
@@ -87,14 +87,14 @@ const seq = <Payload, Done, Fail>(
     safe: true,
     filter: false,
     priority: 'effect',
-    fn(upd, scope_, stack) {
-      const scope: { handlerId: string; handler: Function } = scope_ as any
+    fn(upd, scopeArg, stack) {
+      const scope: { handlerId: string; handler: Function } = scopeArg as any
       let handler = scope.handler
       if (getForkPage(stack)) {
         // FIXME
         // @ts-expect-error
-        const handler_ = getForkPage(stack)!.handlers[scope.handlerId]
-        if (handler_) handler = handler_
+        const handlerArg = getForkPage(stack).handlers[scope.handlerId]
+        if (handlerArg) handler = handlerArg
       }
       upd.handler = handler
       return upd
@@ -106,7 +106,8 @@ const seq = <Payload, Done, Fail>(
       runScope: RunnerScope<Payload, Done, Fail>,
       { scope }: { scope: { [id: string]: any } | null }
     ) {
-      let { strategy, feedback, limit, timeout, cancelled, inFlight } = runScope
+      const { feedback, limit, cancelled, inFlight } = runScope
+      let { strategy, timeout } = runScope
 
       strategy = (args && args.strategy) || strategy
       timeout = (args && args.timeout) || timeout

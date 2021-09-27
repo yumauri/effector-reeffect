@@ -1,4 +1,4 @@
-import { createStore, createEvent, Scope } from 'effector'
+import { createEvent, createStore, Scope } from 'effector'
 import { CancelledError, TimeoutError } from './error'
 import { Strategy } from './strategy'
 import { assign, read } from './tools'
