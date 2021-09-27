@@ -85,7 +85,7 @@
     "yaspeller": "^7.0.0"
   },
   "peerDependencies": {
-    "effector": "^21.2.0"
+    "effector": "^21.2.0 || ^22.0.0"
   },
   "engines": {
     "node": ">=10.17.0"
