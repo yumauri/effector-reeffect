@@ -45,13 +45,12 @@ export const createReEffectFactory = (
     cancelled,
     cancel,
     inFlight: inFlightInternal,
+    pending: pendingInternal,
     anyway: instance.finally,
   }
 
   patchRunner<Payload, Done, Fail>(instance.graphite.scope.runner, scope as any)
   patchInstance<Payload, Done, Fail>(instance, scope)
-  instance.inFlight = inFlightInternal
-  instance.pending = pendingInternal
 
   return instance
 }
