@@ -1,4 +1,4 @@
-import { Step } from 'effector'
+import { Node as Step, Scope, Store } from 'effector'
 
 /**
  * Shortcut for smaller bundle size
@@ -19,3 +19,24 @@ export const own = (
     owner.family.links.push(graphite)
   }
 }
+
+/**
+ * Helper from Effector's code, to set meta of the fields
+ * https://github.com/effector/effector/blob/master/src/effector/getter.ts
+ */
+export const setMeta = (
+  unit: { graphite: Step },
+  field: string,
+  value: any
+) => {
+  unit.graphite.meta[field] = value
+}
+
+/**
+ * Helper from Effector's code, to get fork page
+ * https://github.com/effector/effector/blob/master/src/effector/getter.ts
+ */
+export const getForkPage = (val: any): Scope | void => val.scope
+
+export const read = <T = any>(scope?: Scope) => ($store: Store<T>) =>
+  scope ? scope.getState($store) : $store.getState()

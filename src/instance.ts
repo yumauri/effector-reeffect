@@ -1,12 +1,14 @@
-import { Event, launch, Step, step } from 'effector'
+import { Event, launch, Node as Step, step, Store } from 'effector'
 import { CancelledPayload, MutableReEffect, ReEffectConfig } from './types'
 import { defer } from './promise'
-import { assign, own } from './tools'
+import { assign, own, setMeta } from './tools'
 
 interface InstanceNewEvents<Payload> {
   readonly cancelled: Event<CancelledPayload<Payload>> & { graphite: Step }
   readonly cancel: Event<void> & { graphite: Step }
   readonly feedback: boolean
+  readonly inFlight: Store<number> & { graphite: Step }
+  readonly pending: Store<boolean> & { graphite: Step }
 }
 
 /**
@@ -14,10 +16,11 @@ interface InstanceNewEvents<Payload> {
  */
 export const patchInstance = <Payload, Done, Fail>(
   instance: MutableReEffect<Payload, Done, Fail>,
-  { cancelled, cancel, feedback }: InstanceNewEvents<Payload>
+  { cancelled, cancel, feedback, inFlight, pending }: InstanceNewEvents<Payload>
 ) => {
-  assign(instance, { cancelled, cancel })
+  assign(instance, { cancelled, cancel, inFlight, pending })
   own(instance, [cancelled, cancel])
+  setMeta(cancelled, 'needFxCounter', 'dec')
 
   // adjust create function, to be able to set strategy, alongside with params
   instance.create = (paramsOrConfig, [strategyOrConfig]) => {

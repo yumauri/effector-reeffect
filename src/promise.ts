@@ -1,9 +1,10 @@
+import { createEvent, createStore, Scope } from 'effector'
 import { CancelledError, TimeoutError } from './error'
 import { Strategy } from './strategy'
-import { assign } from './tools'
+import { assign, read } from './tools'
 
 export type CancellablePromise<T> = Promise<T> & {
-  cancel: (strategy?: Strategy) => void
+  cancel: (strategy?: Strategy | void) => void
 }
 
 /**
@@ -55,4 +56,36 @@ export const defer = <Done>(): {
   })
   deferred.req.catch(() => {})
   return deferred
+}
+
+/**
+ * Creates running promises storage
+ * Store is automatically forked within the scope, which allows to use reeffect easily with fork api
+ */
+export const createRunning = <Done>() => {
+  // needed to catch the scope when cancelling manually
+  const cancelAllEv = createEvent<Strategy | void>({
+    sid: 'internal/cancelAll',
+  })
+  const $running = createStore<CancellablePromise<Done>[]>([], {
+    sid: 'internal/$running',
+    serialize: 'ignore',
+  })
+
+  $running.watch(cancelAllEv, (runs, strategy) =>
+    runs.forEach(p => p.cancel(strategy))
+  )
+
+  const push = (promise: CancellablePromise<Done>, scope?: Scope) => {
+    read(scope)($running).push(promise)
+  }
+  const unpush = (promise: CancellablePromise<Done>, scope?: Scope) => {
+    if (!promise) return
+    read(scope)($running).splice(read(scope)($running).indexOf(promise), 1)
+  }
+  const cancelAll = (strategy: Strategy | undefined, scope?: Scope) => {
+    read(scope)($running).forEach(p => p.cancel(strategy))
+  }
+
+  return { $running, push, unpush, cancelAll, cancelAllEv }
 }

@@ -1,9 +1,12 @@
-import { createEffect as effectorCreateEffect, createEvent } from 'effector'
+import {
+  createEffect as effectorCreateEffect,
+  createEvent,
+  createStore,
+} from 'effector'
 import { CreateReEffect, CreateReEffectConfig, ReEffect } from './types'
-import { CancellablePromise } from './promise'
 import { patchInstance } from './instance'
 import { patchRunner } from './runner'
-import { Strategy, TAKE_EVERY } from './strategy'
+import { TAKE_EVERY } from './strategy'
 
 /**
  * High-order function over createEffect
@@ -18,6 +21,17 @@ export const createReEffectFactory = (
   const instance = (createEffect as any)(nameOrConfig, maybeConfig)
   const cancelled = (createEvent as any)({ named: 'cancelled' })
   const cancel = (createEvent as any)({ named: 'cancel' })
+  // Separate instance of inFlight is created,
+  // because inFlight will be force-synchronized with internal runningCount
+  // Doing this with actual inFlight instance leads to crazy bugs like negative inFlight count
+  // Not doing this at all leads to changes in observable behaviour of ReEffect
+  const inFlightInternal = (createStore as any)(0, {
+    named: 'reeffectInFlight',
+  }).on(instance, s => s + 1)
+  const pendingInternal = inFlightInternal.map({
+    fn: amount => amount > 0,
+    named: 'reeffectPending',
+  })
 
   // prettier-ignore
   const config =
@@ -27,8 +41,6 @@ export const createReEffectFactory = (
         ? nameOrConfig
         : {}
 
-  const running: CancellablePromise<Done>[] = []
-
   const scope = {
     strategy: config.strategy || TAKE_EVERY,
     feedback: config.feedback || false,
@@ -36,23 +48,13 @@ export const createReEffectFactory = (
     timeout: config.timeout,
     cancelled,
     cancel,
-    running,
-    inFlight: instance.inFlight,
-
-    push: (promise: CancellablePromise<Done>) => running.push(promise),
-    unpush: (promise?: CancellablePromise<Done>) => {
-      if (promise) {
-        // `running` array should always contain `promise`
-        // no need to check for index === -1
-        running.splice(running.indexOf(promise), 1)
-      }
-      return running.length
-    },
-    cancelAll: (strategy?: Strategy) =>
-      running.map(promise => promise.cancel(strategy)),
+    inFlight: inFlightInternal,
+    pending: pendingInternal,
+    anyway: instance.finally,
   }
 
   patchRunner<Payload, Done, Fail>(instance.graphite.scope.runner, scope as any)
   patchInstance<Payload, Done, Fail>(instance, scope)
+
   return instance
 }

@@ -1,5 +1,5 @@
-import { createDomain, forward, scopeBind } from 'effector'
-import { fork, serialize, allSettled } from 'effector/fork'
+import { createDomain, forward, scopeBind, guard } from 'effector'
+import { fork, serialize, allSettled } from 'effector'
 import { createReEffectFactory } from './createReEffect'
 import { TAKE_FIRST, TAKE_LAST, QUEUE, RACE } from './strategy'
 
@@ -37,6 +37,67 @@ test('createReEffect resolves in fork by default', async () => {
 })
 
 test('createReEffect do not affect other forks', async () => {
+  const createReEffect = createReEffectFactory()
+
+  const app = createDomain()
+  const start = app.createEvent<number>()
+  const $store = app.createStore(0, { sid: '$store' })
+  const reeffect = createReEffect({
+    async handler(param: number, onCancel) {
+      await new Promise<void>((rs, rj) => {
+        let id = setTimeout(() => {
+          rs()
+        }, 5 * param)
+
+        onCancel(() => {
+          clearTimeout(id)
+          rj()
+        })
+      })
+
+      return 5 * param
+    },
+  })
+
+  $store.on(reeffect.done, (state, { result }) => state + result)
+
+  forward({
+    from: start,
+    to: reeffect,
+  })
+
+  guard({
+    source: start,
+    filter: p => p === 1000,
+  }).watch(p => {
+    const scopedCancel = scopeBind(reeffect.cancel)
+
+    setTimeout(() => scopedCancel(), p)
+  })
+
+  const scopeAlice = fork(app)
+  const scopeBob = fork(app)
+
+  await allSettled(start, {
+    scope: scopeAlice,
+    params: 10,
+  })
+
+  await allSettled(start, {
+    scope: scopeBob,
+    params: 1000,
+  })
+
+  expect(serialize(scopeAlice)).toMatchInlineSnapshot(`
+    Object {
+      "$store": 50,
+    }
+  `)
+
+  expect(serialize(scopeBob)).toMatchInlineSnapshot(`Object {}`)
+})
+
+test('createReEffect cancelled reeffect do not affect other forks', async () => {
   const createReEffect = createReEffectFactory()
 
   const app = createDomain()
@@ -251,11 +312,8 @@ test('createReEffect in scope: cancelled reeffect does not hanging up `allSettle
     params: undefined,
   })
 
-  expect(serialize(scope)).toMatchInlineSnapshot(`
-    Object {
-      "$store": 0,
-    }
-  `)
+  expect(scope.getState($store)).toEqual(0)
+  expect(serialize(scope)).toMatchInlineSnapshot(`Object {}`) // store is not changed, so it must be not serialized
 })
 
 test('createReEffect in scope: failed reeffect does not hanging up `allSettled` and resolves in scope correctly', async () => {
@@ -339,11 +397,45 @@ test('createReEffect in scope: multiple calls aren`t hanging up `allSettled`', a
     params: undefined,
   })
 
-  expect(cancelled).toBeCalledTimes(2)
-
   expect(serialize(scope)).toMatchInlineSnapshot(`
     Object {
       "$store": 5,
+    }
+  `)
+})
+
+test('createReEffect in scope: handler for scope works', async () => {
+  const createReEffect = createReEffectFactory()
+
+  const app = createDomain()
+  const start = app.createEvent()
+  const $store = app.createStore(0, { name: '$store', sid: '$store' })
+  const reeffect = createReEffect({
+    async handler() {
+      return 5
+    },
+    sid: 'reeffect',
+  })
+
+  $store.on(reeffect.done, (state, { result }) => state + result)
+
+  forward({
+    from: start,
+    to: reeffect,
+  })
+
+  const scope = fork({
+    handlers: [[reeffect, async () => 7]],
+  })
+
+  await allSettled(start, {
+    scope,
+    params: undefined,
+  })
+
+  expect(serialize(scope)).toMatchInlineSnapshot(`
+    Object {
+      "$store": 7,
     }
   `)
 })
@@ -379,8 +471,6 @@ test('createReEffect in scope: TAKE_EVERY', async () => {
     scope,
     params: undefined,
   })
-
-  expect(cancelled).toBeCalledTimes(2)
 
   expect(serialize(scope)).toMatchInlineSnapshot(`
     Object {
@@ -482,7 +572,11 @@ test('createReEffect in scope: QUEUE', async () => {
   const $store = app.createStore(0, { name: '$store', sid: '$store' })
   const reeffect = createReEffect<number, number>({
     async handler(p) {
-      return new Promise<number>(resolve => setTimeout(() => resolve(p), 30))
+      return new Promise<number>(resolve =>
+        setTimeout(() => {
+          resolve(p)
+        }, 30)
+      )
     },
     strategy: QUEUE,
   })
@@ -495,9 +589,13 @@ test('createReEffect in scope: QUEUE', async () => {
     bindReeffect(1)
     bindReeffect(2)
     bindReeffect(3)
+    bindReeffect(4)
+    bindReeffect(5)
   })
 
-  $store.on(reeffect.done, (state, { result }) => state + result)
+  $store.on(reeffect.done, (state, { result }) => {
+    return state + result
+  })
 
   const scope = fork(app)
 
@@ -505,8 +603,6 @@ test('createReEffect in scope: QUEUE', async () => {
     scope,
     params: undefined,
   })
-
-  expect(cancelled).toBeCalledTimes(2)
 
   expect(serialize(scope)).toMatchInlineSnapshot(`
     Object {
