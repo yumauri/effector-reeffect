@@ -1,4 +1,8 @@
-import { createEffect as effectorCreateEffect, createEvent } from 'effector'
+import {
+  createEffect as effectorCreateEffect,
+  createEvent,
+  createStore,
+} from 'effector'
 import { CreateReEffect, CreateReEffectConfig, ReEffect } from './types'
 import { patchInstance } from './instance'
 import { patchRunner } from './runner'
@@ -17,6 +21,8 @@ export const createReEffectFactory = (
   const instance = (createEffect as any)(nameOrConfig, maybeConfig)
   const cancelled = (createEvent as any)({ named: 'cancelled' })
   const cancel = (createEvent as any)({ named: 'cancel' })
+  const inFlightInternal = createStore(0)
+  const pendingInternal = inFlightInternal.map(count => count > 0)
 
   // prettier-ignore
   const config =
@@ -33,12 +39,14 @@ export const createReEffectFactory = (
     timeout: config.timeout,
     cancelled,
     cancel,
-    inFlight: instance.inFlight,
+    inFlight: inFlightInternal,
     anyway: instance.finally,
   }
 
   patchRunner<Payload, Done, Fail>(instance.graphite.scope.runner, scope as any)
   patchInstance<Payload, Done, Fail>(instance, scope)
+  instance.inFlight = inFlightInternal
+  instance.pending = pendingInternal
 
   return instance
 }

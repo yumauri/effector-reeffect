@@ -235,8 +235,8 @@ const fin = <Payload>(
   unpush(promise as any, scope as Scope)
 
   const runningCount = read(scope as Scope)($running).length
-  const targets: (Event<any> | Store<number> | Step)[] = [inFlight, sidechain]
-  const payloads: any[] = [runningCount, [fn, data]]
+  const targets: (Event<any> | Store<number> | Step)[] = [sidechain]
+  const payloads: any[] = [[fn, data]]
 
   // - if this is `cancelled` event
   // - if this was last event in `running`
@@ -261,6 +261,17 @@ const fin = <Payload>(
     }
   } else if (runningCount && (strategy === TAKE_EVERY || strategy === QUEUE)) {
     targets.push(internalFinally)
+  }
+
+  if (runningCount && (type !== Result.CANCEL || strategy !== RACE)) {
+    launch({
+      scope: scope as Scope,
+      target: [inFlight],
+      params: [runningCount],
+    })
+  } else {
+    targets.unshift(inFlight)
+    payloads.unshift(runningCount)
   }
 
   launch({
