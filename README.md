@@ -1,3 +1,7 @@
+# THIS PROJECT IS UNMAINTAINED AND DEPRECATED
+
+Please use something else. See: https://github.com/yumauri/effector-reeffect/issues/26
+
 # effector-reeffect
 
 [![Build Status](https://github.com/yumauri/effector-reeffect/workflows/build/badge.svg)](https://github.com/yumauri/effector-reeffect/actions?workflow=build)
