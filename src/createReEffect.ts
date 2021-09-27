@@ -21,8 +21,13 @@ export const createReEffectFactory = (
   const instance = (createEffect as any)(nameOrConfig, maybeConfig)
   const cancelled = (createEvent as any)({ named: 'cancelled' })
   const cancel = (createEvent as any)({ named: 'cancel' })
-  const inFlightInternal = createStore(0)
-  const pendingInternal = inFlightInternal.map(count => count > 0)
+  const inFlightInternal = (createStore as any)(0, {
+    named: 'reeffectInFlight',
+  })
+  const pendingInternal = inFlightInternal.map({
+    fn: amount => amount > 0,
+    named: 'reeffectPending',
+  })
 
   // prettier-ignore
   const config =
